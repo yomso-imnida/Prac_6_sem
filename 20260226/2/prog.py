@@ -1,5 +1,5 @@
 import sys
-from cowsay import cowsay
+from cowsay import cowsay, list_cows
 
 SIZE = 10               # поле 10x10
 tmp_x, tmp_y = 0, 0     # старт игрока в (0, 0)
@@ -59,13 +59,17 @@ for in_line in sys.stdin:
 
         # преобразовываем координаты
         try:
-            x = int(line_split[1])
-            y = int(line_split[2])
+            x = int(line_split[2])
+            y = int(line_split[3])
         except ValueError:
             print("Invalid arguments")
             continue
 
-        name = line_split[3]                # имя монстра
+        name = line_split[1]                # имя монстра
+        if name not in list_cows():
+            print("Cannot add unknown monster")
+            continue
+        
         hello = line_split[4]               # привествие монстра
         replaced = (x, y) in monsters       # проверка: есть ли монстр
         monsters[(x, y)] = {"name": name, "hello": hello}            # добавление/замена монстра
