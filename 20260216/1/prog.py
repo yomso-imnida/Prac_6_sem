@@ -1,4 +1,4 @@
-import sys, os
+import sys, os, zlib
 
 # печать списка веток
 def heads_list():
@@ -20,6 +20,21 @@ def commit_branch(branch):
 
     return sha
 
+# нахождение объекта-дерева последнего коммита
+# объекты лежат в .git/objects/xx/yyyy
+def find_obj(sha):
+    path = (sys.argv[1] + ".git/objects/" + sha[:2] + "/" + sha[2:])
+
+    bytes_data = open(path, "rb").read()
+    data = zlib.decompress(bytes_data)
+    head, _, tail = data.partition(b'\x00')         # partition() делит bytes по первому вхождению разделителя
+                                                    # head - всё до \x00, _ - сам разделитель, tail - всё после \x00
+
+    obj_type = head.split(b" ")[0].decode()         # разбиваем, берем тип, декодируем
+
+    return obj_type, tail                           # возврат типа git-объекта и его содержимого
+
+
 # ввели только путь к каталогу
 if len(sys.argv) == 2:
     heads_list()
@@ -27,3 +42,9 @@ if len(sys.argv) == 2:
 # ввели путь к каталогу и имя ветки
 elif len(sys.argv) == 3:
     print(commit_branch(sys.argv[2]))
+
+# вывод последнего коммита
+last_com = commit_branch(sys.argv[2])
+type_obj, body_obj = find_obj(last_com)
+
+print(body_obj.decode())
