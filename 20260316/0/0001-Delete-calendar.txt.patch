@@ -1,0 +1,20 @@
+From 0461cdeecb47038d16305089901bbd6c54d432a8 Mon Sep 17 00:00:00 2001
+From: StarDust <118014580+yomso-imnida@users.noreply.github.com>
+Date: Wed, 11 Mar 2026 01:47:21 +0300
+Subject: [PATCH 1/2] Delete calendar.txt
+
+---
+ calendar.txt | 1 -
+ 1 file changed, 1 deletion(-)
+ delete mode 100644 calendar.txt
+
+diff --git a/calendar.txt b/calendar.txt
+deleted file mode 100644
+index 041fd0d..0000000
+--- a/calendar.txt
++++ /dev/null
+@@ -1 +0,0 @@
+-pupupu
+-- 
+2.53.0
+

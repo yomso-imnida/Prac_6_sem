@@ -1,0 +1,100 @@
+--- ps1	2026-03-16 13:07:17.102608070 +0300
++++ ps2	2026-03-16 13:07:09.080608677 +0300
+@@ -38,7 +38,7 @@
+ root          44       2  0 12:51 ?        00:00:00 [rcu_tasks_trace_kthread]
+ root          45       2  0 12:51 ?        00:00:00 [kauditd]
+ root          46       2  0 12:51 ?        00:00:00 [oom_reaper]
+-root          47       2  0 12:51 ?        00:00:01 [kworker/u16:2-events_unbound]
++root          47       2  0 12:51 ?        00:00:01 [kworker/u16:2-flush-btrfs-1]
+ root          48       2  0 12:51 ?        00:00:00 [kworker/R-writeback]
+ root          49       2  0 12:51 ?        00:00:02 [kcompactd0]
+ root          50       2  0 12:51 ?        00:00:00 [ksmd]
+@@ -48,7 +48,7 @@
+ root          54       2  0 12:51 ?        00:00:00 [kworker/R-kintegrityd]
+ root          55       2  0 12:51 ?        00:00:00 [kworker/1:1-events_freezable]
+ root          56       2  0 12:51 ?        00:00:00 [irq/9-acpi]
+-root          57       2  0 12:51 ?        00:00:00 [kworker/3:1-events]
++root          57       2  0 12:51 ?        00:00:00 [kworker/3:1-events_freezable]
+ root          58       2  0 12:51 ?        00:00:00 [kworker/R-tpm_dev_wq]
+ root          59       2  0 12:51 ?        00:00:00 [kworker/R-ata_sff]
+ root          60       2  0 12:51 ?        00:00:00 [kworker/R-md]
+@@ -56,8 +56,8 @@
+ root          62       2  0 12:51 ?        00:00:00 [kworker/R-edac-poller]
+ root          63       2  0 12:51 ?        00:00:00 [kworker/R-devfreq_wq]
+ root          64       2  0 12:51 ?        00:00:00 [watchdogd]
+-root          65       2  0 12:51 ?        00:00:00 [kworker/1:1H-kblockd]
+-root          66       2  0 12:51 ?        00:00:00 [kworker/2:1-i915-unordered]
++root          65       2  0 12:51 ?        00:00:00 [kworker/1:1H-i915_cleanup]
++root          66       2  0 12:51 ?        00:00:00 [kworker/2:1-events_freezable]
+ root          67       2  0 12:51 ?        00:00:01 [kswapd0]
+ root          68       2  0 12:51 ?        00:00:00 [kworker/R-cryptd]
+ root          71       2  0 12:51 ?        00:00:00 [kworker/R-kthrotld]
+@@ -107,8 +107,8 @@
+ root         411       2  0 12:51 ?        00:00:00 [card1-crtc0]
+ root         412       2  0 12:51 ?        00:00:00 [card1-crtc1]
+ root         413       2  0 12:51 ?        00:00:00 [card1-crtc2]
+-root         436       2  0 12:51 ?        00:00:00 [kworker/2:3-events_freezable]
+-root         440       2  0 12:51 ?        00:00:02 [kworker/u16:4-events_unbound]
++root         436       2  0 12:51 ?        00:00:00 [kworker/2:3-i915-unordered]
++root         440       2  0 12:51 ?        00:00:02 [kworker/u16:4-btrfs-compressed-write]
+ root         449       2  0 12:51 ?        00:00:00 [kworker/3:3-events]
+ root         505       1  0 12:51 ?        00:00:02 /usr/lib/systemd/systemd-journald
+ root         536       1  0 12:51 ?        00:00:00 /usr/lib/systemd/systemd-userdbd
+@@ -134,7 +134,7 @@
+ root         781       2  0 12:51 ?        00:00:00 [kworker/R-xprtiod]
+ dbus         793       1  0 12:51 ?        00:00:00 /usr/bin/dbus-broker-launch --scope system --audit
+ dbus         805     793  0 12:51 ?        00:00:01 dbus-broker --log 10 --controller 9 --machine-id 263340deb66a4e0f8981e028d53987d0 --max-bytes 536870912 --max-fds 4096 --max-matches 131072 --audit
+-avahi        808       1  8 12:51 ?        00:01:15 avahi-daemon: running [fedora-3.local]
++avahi        808       1  7 12:51 ?        00:01:13 avahi-daemon: running [fedora-3.local]
+ root         809       1  0 12:51 ?        00:00:00 /usr/libexec/bluetooth/bluetoothd
+ root         814       1  0 12:51 ?        00:00:00 /usr/sbin/irqbalance
+ root         816       1  0 12:51 ?        00:00:00 /usr/libexec/low-memory-monitor
+@@ -167,13 +167,13 @@
+ root        1396       1  0 12:52 ?        00:00:00 /usr/bin/gssproxy -i
+ root        1397       1  0 12:52 ?        00:00:00 /usr/bin/python3 -Es /usr/sbin/tuned -l -P
+ root        1402    1394  0 12:52 ?        00:00:00 /opt/AmneziaVPN/service/bin/AmneziaVPN-service
+-root        1649       2  0 12:52 ?        00:00:00 [kworker/u16:14-blkcg_punt_bio]
++root        1649       2  0 12:52 ?        00:00:00 [kworker/u16:14-btrfs-endio-write]
+ root        1655       2  0 12:52 ?        00:00:01 [kworker/u16:20-btrfs-delalloc]
+ root        1658       2  0 12:52 ?        00:00:01 [kworker/u16:23-btrfs-endio-write]
+ root        1662       2  0 12:56 ?        00:00:00 [irq/128-mei_me]
+-root        1669       2  0 12:56 ?        00:00:01 [kworker/u16:33-btrfs-endio-write]
++root        1669       2  0 12:56 ?        00:00:01 [kworker/u16:33-flush-btrfs-1]
+ root        1671       2  0 12:56 ?        00:00:02 [kworker/u16:35-btrfs-endio-write]
+-root        1672       2  0 12:56 ?        00:00:01 [kworker/u16:36-btrfs-endio-write]
++root        1672       2  0 12:56 ?        00:00:01 [kworker/u16:36-events_unbound]
+ root        1673       2  0 12:56 ?        00:00:02 [kworker/u16:37-btrfs-endio-write]
+ root        1692       1  0 12:56 ?        00:00:04 /usr/sbin/rsyslogd -n
+ root        1711       1  0 12:56 ?        00:00:00 /usr/sbin/atd -f
+@@ -282,7 +282,7 @@
+ StarPur+    5227    4926  0 12:58 pts/2    00:00:00 /usr/bin/bash --init-file /usr/share/code/resources/app/out/vs/workbench/contrib/terminal/common/scripts/shellIntegration-bash.sh
+ StarPur+    5467    4870  3 12:58 ?        00:00:15 /usr/share/code/code /home/StarPurpleDust/.vscode/extensions/ms-python.vscode-pylance-2026.1.1/dist/server.bundle.js --cancellationReceive=file:fffda23a7944aeabbf1770fa244902b7004c0ad97c --node-ipc --clientProcessId=4870
+ root        6042       2  0 13:00 ?        00:00:00 [kworker/3:2-events_freezable]
+-StarPur+    6106    3217  7 13:00 ?        00:00:30 /opt/yandex/browser/yandex_browser
++StarPur+    6106    3217  8 13:00 ?        00:00:30 /opt/yandex/browser/yandex_browser
+ StarPur+    6112    6106  0 13:00 ?        00:00:00 cat
+ StarPur+    6113    6106  0 13:00 ?        00:00:00 cat
+ StarPur+    6115    3016  0 13:00 ?        00:00:00 /opt/yandex/browser/chrome_crashpad_handler --monitor-self --monitor-self-annotation=ptype=crashpad-handler --database=/home/StarPurpleDust/.config/yandex-browser/Crash Reports --metrics-dir=/home/StarPurpleDust/.config/yandex-browser --url=https://crash-reports.browser.yandex.net/submit --annotation=channel=stable --annotation=lsb-release=Fedora Linux 43 (Workstation Edition) --annotation=plat=Linux --annotation=prod=Yandex_Linux --annotation=ver=25.12.1.1319 --initial-client-fd=5 --shared-client-connection
+@@ -299,7 +299,7 @@
+ StarPur+    6297    6106  0 13:01 ?        00:00:00 /opt/yandex/browser/yandex_browser --type=utility --utility-sub-type=audio.mojom.AudioService --lang=ru --service-sandbox-type=none --user-id=23853676-3418-4023-a9de-c7f964b865f6 --brand-id=yandex --crashpad-handler-pid=6115 --enable-crash-reporter=a841d71c-92df-4b74-9fd1-16468f9ea4bb,stable --change-stack-guard-on-fork=enable --process-name=Audio Service --shared-files=v8_context_snapshot_data:100 --metrics-shmem-handle=4,i,4102843607574943204,9836996434740716166,524288 --field-trial-handle=3,i,8679888141910540263,17348401915099860302,262144 --disable-features=EyeDropper --variations-seed-version --trace-process-track-uuid=3190709065960428659
+ root        6311       2  0 13:01 ?        00:00:00 [kworker/2:0-mm_percpu_wq]
+ root        6513       2  0 13:01 ?        00:00:00 [kworker/1:2-events]
+-StarPur+    6560    6126  2 13:01 ?        00:00:10 /opt/yandex/browser/yandex_browser --type=renderer --user-id=23853676-3418-4023-a9de-c7f964b865f6 --brand-id=yandex --crashpad-handler-pid=6115 --enable-crash-reporter=a841d71c-92df-4b74-9fd1-16468f9ea4bb,stable --help-url=https://api.browser.yandex.ru/redirect/help/ --user-agent-info --web-ntp-url-for-renderer=https://webntp.yandex.ru/ --translate-security-origin=https://browser.translate.yandex.net/ --enable-instaserp --change-stack-guard-on-fork=enable --ozone-platform=x11 --lang=ru --num-raster-threads=2 --enable-main-frame-before-activation --renderer-client-id=81 --time-ticks-at-unix-epoch=-1773654908926942 --launch-time-ticks=378480120 --shared-files=v8_context_snapshot_data:100 --metrics-shmem-handle=4,i,6321285380502206103,17076712432665487379,2097152 --field-trial-handle=3,i,8679888141910540263,17348401915099860302,262144 --disable-features=EyeDropper --variations-seed-version --trace-process-track-uuid=3190709062212261263
++StarPur+    6560    6126  3 13:01 ?        00:00:10 /opt/yandex/browser/yandex_browser --type=renderer --user-id=23853676-3418-4023-a9de-c7f964b865f6 --brand-id=yandex --crashpad-handler-pid=6115 --enable-crash-reporter=a841d71c-92df-4b74-9fd1-16468f9ea4bb,stable --help-url=https://api.browser.yandex.ru/redirect/help/ --user-agent-info --web-ntp-url-for-renderer=https://webntp.yandex.ru/ --translate-security-origin=https://browser.translate.yandex.net/ --enable-instaserp --change-stack-guard-on-fork=enable --ozone-platform=x11 --lang=ru --num-raster-threads=2 --enable-main-frame-before-activation --renderer-client-id=81 --time-ticks-at-unix-epoch=-1773654908926942 --launch-time-ticks=378480120 --shared-files=v8_context_snapshot_data:100 --metrics-shmem-handle=4,i,6321285380502206103,17076712432665487379,2097152 --field-trial-handle=3,i,8679888141910540263,17348401915099860302,262144 --disable-features=EyeDropper --variations-seed-version --trace-process-track-uuid=3190709062212261263
+ root        6752     536  0 13:02 ?        00:00:00 systemd-userwork: waiting...
+ root        6753       2  0 13:02 ?        00:00:00 [kworker/0:0-events_freezable]
+ StarPur+    6816    6126  0 13:03 ?        00:00:00 /opt/yandex/browser/yandex_browser --type=utility --utility-sub-type=autofill.mojom.TflPredictionsService --lang=ru --service-sandbox-type=utility --user-id=23853676-3418-4023-a9de-c7f964b865f6 --brand-id=yandex --crashpad-handler-pid=6115 --enable-crash-reporter=a841d71c-92df-4b74-9fd1-16468f9ea4bb,stable --change-stack-guard-on-fork=enable --process-name=Autofill Tfl Predictions --shared-files=v8_context_snapshot_data:100 --metrics-shmem-handle=4,i,12669118395896620703,9624897531556899565,524288 --field-trial-handle=3,i,8679888141910540263,17348401915099860302,262144 --disable-features=EyeDropper --variations-seed-version --trace-process-track-uuid=3190709077204930847
+@@ -310,10 +310,9 @@
+ StarPur+    7060    7011  0 13:04 pts/0    00:00:00 /usr/bin/bash
+ StarPur+    7152    6126  0 13:04 ?        00:00:00 /opt/yandex/browser/yandex_browser --type=renderer --user-id=23853676-3418-4023-a9de-c7f964b865f6 --brand-id=yandex --crashpad-handler-pid=6115 --enable-crash-reporter=a841d71c-92df-4b74-9fd1-16468f9ea4bb,stable --help-url=https://api.browser.yandex.ru/redirect/help/ --user-agent-info --web-ntp-url-for-renderer=https://webntp.yandex.ru/ --translate-security-origin=https://browser.translate.yandex.net/ --enable-instaserp --change-stack-guard-on-fork=enable --ozone-platform=x11 --lang=ru --num-raster-threads=2 --enable-main-frame-before-activation --renderer-client-id=99 --time-ticks-at-unix-epoch=-1773654908926942 --launch-time-ticks=564719116 --shared-files=v8_context_snapshot_data:100 --metrics-shmem-handle=4,i,16422883327423468838,16390274949695333508,2097152 --field-trial-handle=3,i,8679888141910540263,17348401915099860302,262144 --disable-features=EyeDropper --variations-seed-version --trace-process-track-uuid=3190709079079014545
+ root        7169     536  0 13:05 ?        00:00:00 systemd-userwork: waiting...
+-root        7200       2  0 13:05 ?        00:00:00 [kworker/3:0-events]
++root        7200       2  0 13:05 ?        00:00:00 [kworker/3:0-mm_percpu_wq]
+ root        7210       2  0 13:06 ?        00:00:00 [kworker/2:2]
+ StarPur+    7212    6126  0 13:06 ?        00:00:00 /opt/yandex/browser/yandex_browser --type=renderer --user-id=23853676-3418-4023-a9de-c7f964b865f6 --brand-id=yandex --crashpad-handler-pid=6115 --enable-crash-reporter=a841d71c-92df-4b74-9fd1-16468f9ea4bb,stable --help-url=https://api.browser.yandex.ru/redirect/help/ --user-agent-info --web-ntp-url-for-renderer=https://webntp.yandex.ru/ --translate-security-origin=https://browser.translate.yandex.net/ --enable-instaserp --change-stack-guard-on-fork=enable --ozone-platform=x11 --lang=ru --num-raster-threads=2 --enable-main-frame-before-activation --renderer-client-id=100 --time-ticks-at-unix-epoch=-1773654908926942 --launch-time-ticks=674658191 --shared-files=v8_context_snapshot_data:100 --metrics-shmem-handle=4,i,3027184897861104269,16157439221399565144,2097152 --field-trial-handle=3,i,8679888141910540263,17348401915099860302,262144 --disable-features=EyeDropper --variations-seed-version --trace-process-track-uuid=3190709080016056394
+-root        7222       2  0 13:06 ?        00:00:00 [kworker/1:3-inode_switch_wbs]
++root        7222       2  0 13:06 ?        00:00:00 [kworker/1:3-events]
+ root        7223       2  0 13:06 ?        00:00:00 [kworker/u17:1]
+-StarPur+    7235    3566  6 13:07 ?        00:00:00 /usr/libexec/localsearch-extractor-3 --socket-fd 3
+-StarPur+    7240    7060 99 13:07 pts/0    00:00:00 ps -ef
++StarPur+    7227    7060 99 13:07 pts/0    00:00:00 ps -ef
