@@ -34,6 +34,7 @@ def find_obj(sha):
 
     return obj_type, tail                           # возврат типа git-объекта и его содержимого
 
+# нахождение хэшей: дерева и родительского коммита
 def commit_tree(body):
     com_tree, parent_com = None, None
 
@@ -49,6 +50,29 @@ def commit_tree(body):
         # начинается сообщение
         elif line.startswitch(b' '):
             break
+    return com_tree, parent_com
+
+# печать дерева
+def print_tree(sha):
+    type_obj, body_obj = find_obj(sha)
+
+    while body_obj:
+    # mode name\x00sha tail
+        mode, _, tail = body_obj.partition(b' ')        # partition() - разделяет на ровно три части (часть, разделитель, часть)
+        name, _, tail = tail.partition(b'\x00')
+
+        sha = tail[:20].hex()
+        data = tail[20:]
+
+        if mode == b'40000':
+            type_obj = 'tree'
+        else:
+            type_obj = 'blob'
+        
+        print(type_obj, sha, name.decode())
+
+
+''' ----- main ----- '''
 
 # ввели только путь к каталогу
 if len(sys.argv) == 2:
@@ -63,3 +87,7 @@ last_com = commit_branch(sys.argv[2])
 type_obj, body_obj = find_obj(last_com)
 
 print(body_obj.decode())
+
+# вывод tree
+sha_tree, parent = commit_tree(body_obj)
+print_tree(sha_tree)
