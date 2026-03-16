@@ -34,6 +34,21 @@ def find_obj(sha):
 
     return obj_type, tail                           # возврат типа git-объекта и его содержимого
 
+def commit_tree(body):
+    com_tree, parent_com = None, None
+
+    for line in body.splitline():
+        # хэш дерева
+        if line.startswitch(b'tree '):
+            com_tree = line[5:].decode()
+
+        # хэш родительского коммита
+        elif (line.startswitch(b'parent ') and parent_com is None):
+            parent_com = line[7:].decode()
+
+        # начинается сообщение
+        elif line.startswitch(b' '):
+            break
 
 # ввели только путь к каталогу
 if len(sys.argv) == 2:
