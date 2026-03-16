@@ -3,7 +3,7 @@ import sys, os, zlib
 # печать списка веток
 def heads_list():
     # ветки лежат в .git/refs/heads/
-    path_heads = sys.argv[1] + ".git/refs/heads/"
+    path_heads = sys.argv[1] + "/.git/refs/heads/"
     
     for name in os.listdir(path_heads):
         print(name)
@@ -11,7 +11,7 @@ def heads_list():
 # нахождение последнего коммита
 # id коммита лежит в .git/refs/heads/branch
 def commit_branch(branch):
-    path_branch = sys.argv[1] + ".git/refs/heads/branch" + branch
+    path_branch = sys.argv[1] + "/.git/refs/heads/" + branch
 
     file = open(path_branch)
     sha = file.read().strip()
@@ -23,7 +23,7 @@ def commit_branch(branch):
 # нахождение объекта-дерева последнего коммита
 # объекты лежат в .git/objects/xx/yyyy
 def find_obj(sha):
-    path = (sys.argv[1] + ".git/objects/" + sha[:2] + "/" + sha[2:])
+    path = (sys.argv[1] + "/.git/objects/" + sha[:2] + "/" + sha[2:])
 
     bytes_data = open(path, "rb").read()
     data = zlib.decompress(bytes_data)
@@ -38,17 +38,17 @@ def find_obj(sha):
 def commit_tree(body):
     com_tree, parent_com = None, None
 
-    for line in body.splitline():
+    for line in body.splitlines():
         # хэш дерева
-        if line.startswitch(b'tree '):
+        if line.startswith(b'tree '):
             com_tree = line[5:].decode()
 
         # хэш родительского коммита
-        elif (line.startswitch(b'parent ') and parent_com is None):
+        elif (line.startswith(b'parent ') and parent_com is None):
             parent_com = line[7:].decode()
 
         # начинается сообщение
-        elif line.startswitch(b' '):
+        elif line == b'':
             break
     return com_tree, parent_com
 
@@ -62,7 +62,7 @@ def print_tree(sha):
         name, _, tail = tail.partition(b'\x00')
 
         sha = tail[:20].hex()
-        data = tail[20:]
+        body_obj = tail[20:]
 
         if mode == b'40000':
             type_obj = 'tree'
@@ -77,17 +77,34 @@ def print_tree(sha):
 # ввели только путь к каталогу
 if len(sys.argv) == 2:
     heads_list()
+    sys.exit(0)
 
 # ввели путь к каталогу и имя ветки
-elif len(sys.argv) == 3:
-    print(commit_branch(sys.argv[2]))
+if len(sys.argv) != 3:
+    sys.exit(1)
 
 # вывод последнего коммита
 last_com = commit_branch(sys.argv[2])
 type_obj, body_obj = find_obj(last_com)
+if type_obj != 'commit':
+    sys.exit(1)
 
 print(body_obj.decode())
 
 # вывод tree
 sha_tree, parent = commit_tree(body_obj)
 print_tree(sha_tree)
+
+# печать с TREE
+cur = last_com
+while True:
+    type_obj, body_obj = find_obj(cur)
+    sha_tree, parent = commit_tree(body_obj)
+
+    print("TREE for commit", cur)
+    print_tree(sha_tree)
+
+    if parent is None:
+        break
+
+    cur = parent
