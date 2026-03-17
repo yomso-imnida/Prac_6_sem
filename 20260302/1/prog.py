@@ -3,7 +3,7 @@ from cowsay import cowsay, list_cows, read_dot_cow
 
 SIZE = 10               # поле 10x10
 tmp_x, tmp_y = 0, 0     # старт игрока в (0, 0)
-monsters = {}           # словарь {"name": ..., "hello": ...}
+monsters = {}           # словарь {"name": ..., "hello": ..., "hp": ...}
 
 jgsbat = read_dot_cow(r"""
     ,_                    _,
@@ -92,7 +92,7 @@ for in_line in sys.stdin:
         
         hello = line_split[4]               # привествие монстра
         replaced = (x, y) in monsters       # проверка: есть ли монстр
-        monsters[(x, y)] = {"name": name, "hello": hello}            # добавление/замена монстра
+        monsters[(x, y)] = {"name": name, "hello": hello, "hp": hp}     # добавление/замена монстра
         print(f"Added monster {name} to ({x}, {y}) saying {hello}")
 
         # если монстр уже был - говорим, что произошла замена
