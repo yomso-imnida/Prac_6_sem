@@ -47,7 +47,7 @@ for in_line in sys.stdin:
     if not line:
         continue
 
-    line_split = line.split()       # line_split[0] - команда, остальное - аргументы
+    line_split = shlex.split(line)       # line_split[0] - команда, остальное - аргументы
 
     cmd = line_split[0]             # команда
 
