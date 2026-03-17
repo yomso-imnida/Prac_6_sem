@@ -36,6 +36,10 @@ def encounter(x, y):
         print(cowsay(monster["hello"], cow=monster["name"]))
 
 
+''' ----- main ----- '''
+
+print("<<< Welcome to Python-MUD 0.1 >>>")
+
 for in_line in sys.stdin:
     line = in_line.strip()
 
