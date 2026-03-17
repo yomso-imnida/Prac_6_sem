@@ -40,6 +40,8 @@ def encounter(x, y):
 
 print("<<< Welcome to Python-MUD 0.1 >>>")
 
+# addmon <monster_name> hello <hello_string> hp <hitpoints> coords <x> <y>
+
 for in_line in sys.stdin:
     line = in_line.strip()
 
@@ -47,9 +49,17 @@ for in_line in sys.stdin:
     if not line:
         continue
 
-    line_split = shlex.split(line)       # line_split[0] - команда, остальное - аргументы
+    # line_split[0] - addmon, ine_split[1] - имя монстра, остальное - в рандомном порядке
+    try:
+        line_split = shlex.split(line)
+    except ValueError:
+        print("Invalid arguments")
+        continue
 
-    cmd = line_split[0]             # команда
+    if not line_split:
+        continue
+
+    cmd = line_split[0]                 # команда
 
     if cmd in ["up", "down", "left", "right"]:
         # если есть аргументы у движения - ошибка
@@ -72,30 +82,81 @@ for in_line in sys.stdin:
 
     # добавляем монстра
     elif cmd == "addmon":
-        # если аргумента не четыре - ошибка
-        if len(line_split) != 5:
+        if len(line_split) < 2:
             print("Invalid arguments")
             continue
 
         # преобразовываем координаты
-        try:
-            x = int(line_split[2])
-            y = int(line_split[3])
-        except ValueError:
+        name = line_split[1]        # имя монстра
+        hello, hp = None, None
+        x, y = None, None
+
+        i = 2
+        flag = False                # для ошибок
+
+        while i < len(line_split):
+            match line_split[i]:
+                case "hello":
+                    if (i+1) >= len(line_split):
+                        print("Invalid arguments")
+                        flag = True
+                        break
+                    hello = line_split[i+1]
+                    i += 2
+
+                case "hp":
+                    if (i+1) >= len(line_split):
+                        print("Invalid arguments")
+                        flag = True
+                        break
+                    try:
+                        hp = int(line_split[i+1])
+                    except ValueError:
+                        print("Invalid arguments")
+                        flag = True
+                        break
+                    if hp <= 0:
+                        print("Invalid arguments")
+                        flag = True
+                        break
+                    i += 2
+
+                case "coords":
+                    if (i+2) >= len(line_split):
+                        print("Invalid arguments")
+                        flag = True
+                        break
+                    try:
+                        x = int(line_split[i+1])
+                        y = int(line_split[i+2])
+                    except ValueError:
+                        print("Invalid arguments")
+                        flag = True
+                        break
+                    i += 3
+
+                case _:
+                    print("Invalid arguments")
+                    flag = True
+                    break
+
+        if (hello is None) or (hp is None) or (x is None) or (y is None):
             print("Invalid arguments")
             continue
 
         name = line_split[1]                # имя монстра
+
+        if flag:
+            continue
+
         if name not in list_cows() and name != "jgsbat":
             print("Cannot add unknown monster")
             continue
-        
-        hello = line_split[4]               # привествие монстра
-        replaced = (x, y) in monsters       # проверка: есть ли монстр
-        monsters[(x, y)] = {"name": name, "hello": hello, "hp": hp}     # добавление/замена монстра
+
+        replaced = (x, y) in monsters
+        monsters[(x, y)] = {"name": name, "hello": hello, "hp": hp}
         print(f"Added monster {name} to ({x}, {y}) saying {hello}")
 
-        # если монстр уже был - говорим, что произошла замена
         if replaced:
             print("Replaced the old monster")
 
