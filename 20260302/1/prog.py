@@ -1,21 +1,24 @@
 import sys, shlex
-from cowsay import cowsay, list_cows, read_dot_cow
+import cowsay
+from io import StringIO
 
 SIZE = 10               # поле 10x10
 tmp_x, tmp_y = 0, 0     # старт игрока в (0, 0)
 monsters = {}           # словарь {"name": ..., "hello": ..., "hp": ...}
 
-jgsbat = read_dot_cow(r"""
-    ,_                    _,
-    ) '-._  ,_    _,  _.-' (
-    )  _.-'.|\\--//|.'-._  (
-     )'   .'\/o\/o\/'.   `(
-      ) .' . \====/ . '. (
-       )  / <<    >> \  (
-        '-._/``  ``\_.-'
-  jgs     __\\'--'//__
-         (((""`  `"")))
-""")
+jgsbat = cowsay.read_dot_cow(StringIO(r"""
+$the_cow = <<EOC;
+ ,_                    _,
+ ) '-._  ,_    _,  _.-' (
+ )  _.-'.|\\--//|.'-._  (
+  )'   .'\/o\/o\/'.   `(
+   ) .' . \====/ . '. (
+    )  / <<    >> \  (
+     '-._/``  ``\_.-'
+jgs     __\\'--'//__
+       (((""`  `"")))
+EOC
+"""))
 
 
 # перенос на другой край поля (если произошёл выход за границы)
@@ -31,9 +34,9 @@ def encounter(x, y):
         return
     
     if monster["name"] == "jgsbat":
-        print(cowsay(monster["hello"], cowfile=jgsbat))
+        print(cowsay.cowsay(monster["hello"], cowfile=jgsbat))
     else:
-        print(cowsay(monster["hello"], cow=monster["name"]))
+        print(cowsay.cowsay(monster["hello"], cow=monster["name"]))
 
 
 ''' ----- main ----- '''
@@ -147,7 +150,7 @@ for in_line in sys.stdin:
             print("Invalid arguments")
             continue
 
-        if name not in list_cows() and name != "jgsbat":
+        if name not in cowsay.list_cows() and name != "jgsbat":
             print("Cannot add unknown monster")
             continue
 
