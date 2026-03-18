@@ -1,4 +1,4 @@
-import sys
+import sys, shlex
 from cowsay import cowsay, list_cows, read_dot_cow
 
 SIZE = 10               # поле 10x10
@@ -140,13 +140,11 @@ for in_line in sys.stdin:
                     flag = True
                     break
 
-        if (hello is None) or (hp is None) or (x is None) or (y is None):
-            print("Invalid arguments")
+        if flag:
             continue
 
-        name = line_split[1]                # имя монстра
-
-        if flag:
+        if (hello is None) or (hp is None) or (x is None) or (y is None):
+            print("Invalid arguments")
             continue
 
         if name not in list_cows() and name != "jgsbat":
