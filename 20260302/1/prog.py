@@ -1,9 +1,21 @@
 import sys
-from cowsay import cowsay, list_cows
+from cowsay import cowsay, list_cows, read_dot_cow
 
 SIZE = 10               # поле 10x10
 tmp_x, tmp_y = 0, 0     # старт игрока в (0, 0)
 monsters = {}           # словарь {"name": ..., "hello": ...}
+
+jgsbat = read_dot_cow(r"""
+    ,_                    _,
+    ) '-._  ,_    _,  _.-' (
+    )  _.-'.|\\--//|.'-._  (
+     )'   .'\/o\/o\/'.   `(
+      ) .' . \====/ . '. (
+       )  / <<    >> \  (
+        '-._/``  ``\_.-'
+  jgs     __\\'--'//__
+         (((""`  `"")))
+""")
 
 
 # перенос на другой край поля (если произошёл выход за границы)
@@ -15,7 +27,12 @@ def encounter(x, y):
     monster = monsters.get((x, y))
 
     # если монстр есть -> печать приветствия
-    if monster is not None:
+    if monster is None:
+        return
+    
+    if monster["name"] == "jgsbat":
+        print(cowsay(monster["hello"], cowfile=jgsbat))
+    else:
         print(cowsay(monster["hello"], cow=monster["name"]))
 
 
@@ -65,7 +82,7 @@ for in_line in sys.stdin:
             continue
 
         name = line_split[1]                # имя монстра
-        if name not in list_cows():
+        if name not in list_cows() and name != "jgsbat":
             print("Cannot add unknown monster")
             continue
         
