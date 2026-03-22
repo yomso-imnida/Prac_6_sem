@@ -46,6 +46,20 @@ class GameParam():
         else:
             print(cowsay.cowsay(monster["hello"], cow=monster["name"]))
 
+    # перемещения
+    def movements(self, command):
+        match command:
+            case "up":
+                self.tmp_y = self.wrap(self.tmp_y - 1)
+            case "down":
+                self.tmp_y = self.wrap(self.tmp_y + 1)
+            case "left":
+                self.tmp_x = self.wrap(self.tmp_x - 1)
+            case "right":
+                self.tmp_x = self.wrap(self.tmp_x + 1)
+        
+        print(f"Moved to {self.tmp_x, self.tmp_y}")
+        self.encounter(self.tmp_x, self.tmp_y)              # проверка на "происшествие"
 
 '''
 # перенос на другой край поля (если произошёл выход за границы)
@@ -72,48 +86,28 @@ class cmd_MUD(cmd.Cmd):
     # если есть аргументы у движения - ошибка
 
     def do_up(self, arg):
-        global tmp_x, tmp_y
-
         if arg:
             print("Invalid arguments")
             return
-        
-        tmp_y = wrap(tmp_y - 1)
-        print(f"Moved to {tmp_x, tmp_y}")
-        encounter(tmp_x, tmp_y)                 # проверка на "происшествие"
+        self.GameParam.movements("up")
     
     def do_down(self, arg):
-        global tmp_x, tmp_y
-
         if arg:
             print("Invalid arguments")
             return
-        
-        tmp_y = wrap(tmp_y + 1)
-        print(f"Moved to {tmp_x, tmp_y}")
-        encounter(tmp_x, tmp_y)                 # проверка на "происшествие"
+        self.GameParam.movements("down")
         
     def do_left(self, arg):
-        global tmp_x, tmp_y
-
         if arg:
             print("Invalid arguments")
             return
-
-        tmp_x = wrap(tmp_x - 1)
-        print(f"Moved to {tmp_x, tmp_y}")
-        encounter(tmp_x, tmp_y)                 # проверка на "происшествие"
+        self.GameParam.movements("left")
 
     def do_right(self, arg):
-        global tmp_x, tmp_y
-
         if arg:
             print("Invalid arguments")
             return
-        
-        tmp_x = wrap(tmp_x + 1)
-        print(f"Moved to {tmp_x, tmp_y}")
-        encounter(tmp_x, tmp_y)                 # проверка на "происшествие"
+        self.GameParam.movements("right")
 
     def do_addmon(self, arg):
         global monsters
@@ -221,11 +215,11 @@ class cmd_MUD(cmd.Cmd):
 
 print("<<< Welcome to Python-MUD 0.1 >>>")
 
-# addmon <monster_name> hello <hello_string> hp <hitpoints> coords <x> <y>
-
 cmd_MUD().cmdloop()
 
 '''
+# addmon <monster_name> hello <hello_string> hp <hitpoints> coords <x> <y>
+
 for in_line in sys.stdin:
     line = in_line.strip()
 
