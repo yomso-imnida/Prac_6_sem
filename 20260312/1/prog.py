@@ -61,8 +61,8 @@ class GameParam():
             print("Cannot add unknown monster")
             return
 
-        replaced = (x, y) in monsters
-        monsters[(x, y)] = {"name": name, "hello": hello, "hp": hp}
+        replaced = (x, y) in self.monsters
+        self.monsters[(x, y)] = {"name": name, "hello": hello, "hp": hp}
         print(f"Added monster {name} to ({x}, {y}) saying {hello}")
 
         if replaced:
@@ -72,35 +72,37 @@ class GameParam():
 class cmd_MUD(cmd.Cmd):
     prompt = '>>> '
 
+    def __init__(self):
+        cmd.Cmd.__init__(self)
+        self.game = GameParam()
+
     # если есть аргументы у движения - ошибка
 
     def do_up(self, arg):
         if arg:
             print("Invalid arguments")
             return
-        self.GameParam.movements("up")
+        self.game.movements("up")
     
     def do_down(self, arg):
         if arg:
             print("Invalid arguments")
             return
-        self.GameParam.movements("down")
+        self.game.movements("down")
         
     def do_left(self, arg):
         if arg:
             print("Invalid arguments")
             return
-        self.GameParam.movements("left")
+        self.game.movements("left")
 
     def do_right(self, arg):
         if arg:
             print("Invalid arguments")
             return
-        self.GameParam.movements("right")
+        self.game.movements("right")
 
     def do_addmon(self, arg):
-        global monsters
-        
         try:
             line_split = shlex.split(arg)
         except ValueError:
@@ -179,6 +181,8 @@ class cmd_MUD(cmd.Cmd):
         if (hello is None) or (hp is None) or (x is None) or (y is None):
             print("Invalid arguments")
             return
+
+        self.game.addmon(name, hello, hp, x, y)
     
     # вызывается, когда неизвестная команда (в старой версии - последний else)
     def default(self, arg):
