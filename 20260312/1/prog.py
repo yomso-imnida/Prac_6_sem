@@ -78,7 +78,95 @@ class cmd_MUD(cmd.Cmd):
         encounter(tmp_x, tmp_y)                 # проверка на "происшествие"
 
     def do_addmon(self, arg):
-        pass
+        try:
+            line_split = shlex.split(arg)
+        except ValueError:
+            print("Invalid arguments")
+            return
+
+        if len(line_split) < 1:
+            print("Invalid arguments")
+            return
+
+        # преобразовываем координаты
+        name = line_split[0]        # имя монстра
+        hello, hp = None, None
+        x, y = None, None
+
+        i = 1
+        flag = False                # для ошибок
+
+        while i < len(line_split):
+            match line_split[i]:
+                # ----- hello -----
+                case "hello":
+                    if (i+1) >= len(line_split):
+                        print("Invalid arguments")
+                        flag = True
+                        break
+                    hello = line_split[i+1]
+                    i += 2
+
+                # ----- hp -----
+                case "hp":
+                    if (i+1) >= len(line_split):
+                        print("Invalid arguments")
+                        flag = True
+                        break
+
+                    try:
+                        hp = int(line_split[i+1])
+                    except ValueError:
+                        print("Invalid arguments")
+                        flag = True
+                        break
+                    
+                    if hp <= 0:
+                        print("Invalid arguments")
+                        flag = True
+                        break
+                    i += 2
+
+                # ----- coords -----
+                case "coords":
+                    if (i+2) >= len(line_split):
+                        print("Invalid arguments")
+                        flag = True
+                        break
+
+                    try:
+                        x = int(line_split[i+1])
+                        y = int(line_split[i+2])
+                    except ValueError:
+                        print("Invalid arguments")
+                        flag = True
+                        break
+
+                    i += 3
+
+                # ----- other -----
+                case _:
+                    print("Invalid arguments")
+                    flag = True
+                    break
+
+        if flag:
+            return
+
+        if (hello is None) or (hp is None) or (x is None) or (y is None):
+            print("Invalid arguments")
+            return
+
+        if name not in cowsay.list_cows() and name != "jgsbat":
+            print("Cannot add unknown monster")
+            return
+
+        replaced = (x, y) in monsters
+        monsters[(x, y)] = {"name": name, "hello": hello, "hp": hp}
+        print(f"Added monster {name} to ({x}, {y}) saying {hello}")
+
+        if replaced:
+            print("Replaced the old monster")
 
 
 ''' ----- main ----- '''
