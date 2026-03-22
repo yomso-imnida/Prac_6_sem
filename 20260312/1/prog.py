@@ -2,12 +2,6 @@ import cmd, shlex
 import cowsay
 from io import StringIO
 
-'''
-SIZE = 10               # поле 10x10
-tmp_x, tmp_y = 0, 0     # старт игрока в (0, 0)
-monsters = {}           # словарь {"name": ..., "hello": ..., "hp": ...}
-'''
-
 jgsbat = cowsay.read_dot_cow(StringIO(r"""
 $the_cow = <<EOC;
  ,_                    _,
@@ -60,25 +54,20 @@ class GameParam():
         
         print(f"Moved to {self.tmp_x, self.tmp_y}")
         self.encounter(self.tmp_x, self.tmp_y)              # проверка на "происшествие"
-
-'''
-# перенос на другой край поля (если произошёл выход за границы)
-def wrap(coordinate):
-    return coordinate % SIZE
-
-# попадание игрока в клетку с монстром
-def encounter(x, y):
-    monster = monsters.get((x, y))
-
-    # если монстр есть -> печать приветствия
-    if monster is None:
-        return
     
-    if monster["name"] == "jgsbat":
-        print(cowsay.cowsay(monster["hello"], cowfile=jgsbat))
-    else:
-        print(cowsay.cowsay(monster["hello"], cow=monster["name"]))
-'''
+    # добавление / перезапись монстра
+    def addmon(self, name, hello, hp, x, y):
+        if name not in cowsay.list_cows() and name != "jgsbat":
+            print("Cannot add unknown monster")
+            return
+
+        replaced = (x, y) in monsters
+        monsters[(x, y)] = {"name": name, "hello": hello, "hp": hp}
+        print(f"Added monster {name} to ({x}, {y}) saying {hello}")
+
+        if replaced:
+            print("Replaced the old monster")
+
 
 class cmd_MUD(cmd.Cmd):
     prompt = '>>> '
@@ -123,12 +112,12 @@ class cmd_MUD(cmd.Cmd):
             return
 
         # преобразовываем координаты
-        name = line_split[0]        # имя монстра
+        name = line_split[0]            # имя монстра
         hello, hp = None, None
         x, y = None, None
 
         i = 1
-        flag = False                # для ошибок
+        flag = False                    # для ошибок
 
         while i < len(line_split):
             match line_split[i]:
@@ -190,17 +179,6 @@ class cmd_MUD(cmd.Cmd):
         if (hello is None) or (hp is None) or (x is None) or (y is None):
             print("Invalid arguments")
             return
-
-        if name not in cowsay.list_cows() and name != "jgsbat":
-            print("Cannot add unknown monster")
-            return
-
-        replaced = (x, y) in monsters
-        monsters[(x, y)] = {"name": name, "hello": hello, "hp": hp}
-        print(f"Added monster {name} to ({x}, {y}) saying {hello}")
-
-        if replaced:
-            print("Replaced the old monster")
     
     # вызывается, когда неизвестная команда (в старой версии - последний else)
     def default(self, arg):
