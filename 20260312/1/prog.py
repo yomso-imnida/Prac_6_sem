@@ -2,9 +2,11 @@ import cmd, shlex
 import cowsay
 from io import StringIO
 
+'''
 SIZE = 10               # поле 10x10
 tmp_x, tmp_y = 0, 0     # старт игрока в (0, 0)
 monsters = {}           # словарь {"name": ..., "hello": ..., "hp": ...}
+'''
 
 jgsbat = cowsay.read_dot_cow(StringIO(r"""
 $the_cow = <<EOC;
@@ -20,7 +22,32 @@ jgs     __\\'--'//__
 EOC
 """))
 
+class GameParam():
+    def __init__(self):
+        self.size = 10          # поле 10x10
+        self.tmp_x = 0          # старт игрока в (0, 0)
+        self.tmp_y = 0
+        self.monsters = {}      # словарь {"name": ..., "hello": ..., "hp": ...}
+    
+    # перенос на другой край поля (если произошёл выход за границы)
+    def wrap(self, coordinate):
+        return coordinate % self.size
+    
+    # попадание игрока в клетку с монстром
+    def encounter(self, x, y):
+        monster = self.monsters.get((x, y))
 
+        # если монстр есть -> печать приветствия
+        if monster is None:
+            return
+        
+        if monster["name"] == "jgsbat":
+            print(cowsay.cowsay(monster["hello"], cowfile=jgsbat))
+        else:
+            print(cowsay.cowsay(monster["hello"], cow=monster["name"]))
+
+
+'''
 # перенос на другой край поля (если произошёл выход за границы)
 def wrap(coordinate):
     return coordinate % SIZE
@@ -37,6 +64,7 @@ def encounter(x, y):
         print(cowsay.cowsay(monster["hello"], cowfile=jgsbat))
     else:
         print(cowsay.cowsay(monster["hello"], cow=monster["name"]))
+'''
 
 class cmd_MUD(cmd.Cmd):
     prompt = '>>> '
