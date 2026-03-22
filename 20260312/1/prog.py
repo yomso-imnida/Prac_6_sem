@@ -39,9 +39,13 @@ def encounter(x, y):
         print(cowsay.cowsay(monster["hello"], cow=monster["name"]))
 
 class cmd_MUD(cmd.Cmd):
+    prompt = '>>> '
+
     # если есть аргументы у движения - ошибка
 
     def do_up(self, arg):
+        global tmp_x, tmp_y
+
         if arg:
             print("Invalid arguments")
             return
@@ -51,6 +55,8 @@ class cmd_MUD(cmd.Cmd):
         encounter(tmp_x, tmp_y)                 # проверка на "происшествие"
     
     def do_down(self, arg):
+        global tmp_x, tmp_y
+
         if arg:
             print("Invalid arguments")
             return
@@ -60,6 +66,8 @@ class cmd_MUD(cmd.Cmd):
         encounter(tmp_x, tmp_y)                 # проверка на "происшествие"
         
     def do_left(self, arg):
+        global tmp_x, tmp_y
+
         if arg:
             print("Invalid arguments")
             return
@@ -69,6 +77,8 @@ class cmd_MUD(cmd.Cmd):
         encounter(tmp_x, tmp_y)                 # проверка на "происшествие"
 
     def do_right(self, arg):
+        global tmp_x, tmp_y
+
         if arg:
             print("Invalid arguments")
             return
@@ -78,6 +88,8 @@ class cmd_MUD(cmd.Cmd):
         encounter(tmp_x, tmp_y)                 # проверка на "происшествие"
 
     def do_addmon(self, arg):
+        global monsters
+        
         try:
             line_split = shlex.split(arg)
         except ValueError:
@@ -167,6 +179,14 @@ class cmd_MUD(cmd.Cmd):
 
         if replaced:
             print("Replaced the old monster")
+    
+    # вызывается, когда неизвестная команда (в старой версии - последний else)
+    def default(self, arg):
+        print("Invalid command")
+
+    # если будет пустая строка - ничего не делать
+    def emptyline(self):
+        pass
 
 
 ''' ----- main ----- '''
