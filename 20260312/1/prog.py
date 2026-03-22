@@ -1,4 +1,4 @@
-import sys, shlex
+import cmd, shlex
 import cowsay
 from io import StringIO
 
@@ -38,6 +38,48 @@ def encounter(x, y):
     else:
         print(cowsay.cowsay(monster["hello"], cow=monster["name"]))
 
+class cmd_MUD(cmd.Cmd):
+    # если есть аргументы у движения - ошибка
+
+    def do_up(self, arg):
+        if arg:
+            print("Invalid arguments")
+            return
+        
+        tmp_y = wrap(tmp_y - 1)
+        print(f"Moved to {tmp_x, tmp_y}")
+        encounter(tmp_x, tmp_y)                 # проверка на "происшествие"
+    
+    def do_down(self, arg):
+        if arg:
+            print("Invalid arguments")
+            return
+        
+        tmp_y = wrap(tmp_y + 1)
+        print(f"Moved to {tmp_x, tmp_y}")
+        encounter(tmp_x, tmp_y)                 # проверка на "происшествие"
+        
+    def do_left(self, arg):
+        if arg:
+            print("Invalid arguments")
+            return
+
+        tmp_x = wrap(tmp_x - 1)
+        print(f"Moved to {tmp_x, tmp_y}")
+        encounter(tmp_x, tmp_y)                 # проверка на "происшествие"
+
+    def do_right(self, arg):
+        if arg:
+            print("Invalid arguments")
+            return
+        
+        tmp_x = wrap(tmp_x + 1)
+        print(f"Moved to {tmp_x, tmp_y}")
+        encounter(tmp_x, tmp_y)                 # проверка на "происшествие"
+
+    def do_addmon(self, arg):
+        pass
+
 
 ''' ----- main ----- '''
 
@@ -45,6 +87,9 @@ print("<<< Welcome to Python-MUD 0.1 >>>")
 
 # addmon <monster_name> hello <hello_string> hp <hitpoints> coords <x> <y>
 
+cmd_MUD().cmdloop()
+
+'''
 for in_line in sys.stdin:
     line = in_line.strip()
 
@@ -163,3 +208,4 @@ for in_line in sys.stdin:
 
     else:
         print("Invalid command")
+'''
