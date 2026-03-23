@@ -19,6 +19,11 @@ EOC
 # словарь с оружием для нанесения урона монстру
 weapons = {"sword": 10, "spear": 15, "axe": 20}
 
+# список монстров в игре
+def get_monsters():
+    return cowsay.list_cows() + ["jgsbat"]
+
+
 class GameParam():
     def __init__(self):
         self.size = 10          # поле 10x10
@@ -70,11 +75,16 @@ class GameParam():
 
         if replaced:
             print("Replaced the old monster")
-    
-    def attack(self, damage):
+
+    def attack(self, damage, monster_name=None):
+
         monster = self.monsters.get((self.tmp_x, self.tmp_y))
+
         if monster is None:
             print("No monster here")
+            return
+        if monster_name is None and monster["name"] != monster_name:
+            print(f"No {monster_name} here")
             return
 
         # вычисление урона
@@ -214,12 +224,18 @@ class cmd_MUD(cmd.Cmd):
             print("Invalid arguments")
             return
         
+        monster_name = None
         weapon = "sword"
 
         if len(line_split) == 0:
             pass    # если нет аргементов -> по дефолту урон 10, т.е. оружие - sword
+        elif len(line_split) == 1:
+            monster_name = line_split[0]
         elif len(line_split) == 2 and line_split[0] == "with":
             weapon = line_split[1]
+        elif len(line_split) == 3 and line_split[1] == "with":
+            monster_name = line_split[0]
+            weapon = line_split[2]
         else:
             print("Invalid arguments")
             return
@@ -228,7 +244,18 @@ class cmd_MUD(cmd.Cmd):
             print("Invalid arguments")
             return
 
-        self.game.attack(weapons[weapon])
+        self.game.attack(weapons[weapon], monster_name)
+
+    # text - имя монстра, которое уже начали вводить
+    def complete_attack(self, text, line, i_begin, i_end):
+        line_split = shlex.split(line[:i_begin])        # смотрим, какая команда введена
+
+        if len(line_split) == 1:
+            # смотрим на все имена, которые начинаются с text
+            return [name for name in get_monsters() if name.startswitch(text)]
+
+        return []
+
 
     # вызывается, когда неизвестная команда (в старой версии - последний else)
     def default(self, arg):
