@@ -68,10 +68,14 @@ class GameParam():
         if replaced:
             print("Replaced the old monster")
     
-    def attack(self):
+    def attack(self, monster_name=None):
         monster = self.monsters.get((self.tmp_x, self.tmp_y))
+
         if monster is None:
             print("No monster here")
+            return
+        if monster_name is None and monster["name"] != monster_name:
+            print(f"No {monster_name} here")
             return
 
         # урон: 10 hp
@@ -205,10 +209,18 @@ class cmd_MUD(cmd.Cmd):
         self.game.addmon(name, hello, hp, x, y)
     
     def do_attack(self, arg):
-        if arg:
+        try:
+            line_split = shlex.split(arg)
+        except ValueError:
             print("Invalid arguments")
             return
-        self.game.attack()
+        
+        if len(line_split) == 0:
+            self.game.attack()
+        elif len(line_split) == 1:
+            self.game.attack(line_split[0])
+        else:
+            print("Invalid arguments")
 
     # вызывается, когда неизвестная команда (в старой версии - последний else)
     def default(self, arg):
