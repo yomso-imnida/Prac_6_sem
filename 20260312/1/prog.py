@@ -67,6 +67,26 @@ class GameParam():
 
         if replaced:
             print("Replaced the old monster")
+    
+    def attack(self):
+        monster = self.monsters.get((self.tmp_x, self.tmp_y))
+        if monster is None:
+            print("No monster here")
+            return
+
+        # урон: 10 hp
+        damage = min(10, monster['hp'])
+        print(f"Attacked {monster['name']}, damage {damage} hp")
+
+        # наносим урон монстру
+        monster['hp'] -= damage
+
+        # либо убиваем монстра, либо выводим его hp
+        if monster['hp'] == 0:
+            print(f"{monster['name']} died")
+            del self.monsters[(self.tmp_x, self.tmp_y)]
+        else:
+            print(f"{monster['name']} now has {monster['hp']}")
 
 
 class cmd_MUD(cmd.Cmd):
@@ -184,6 +204,12 @@ class cmd_MUD(cmd.Cmd):
 
         self.game.addmon(name, hello, hp, x, y)
     
+    def do_attack(self, arg):
+        if arg:
+            print("Invalid arguments")
+            return
+        self.game.attack()
+
     # вызывается, когда неизвестная команда (в старой версии - последний else)
     def default(self, arg):
         print("Invalid command")
