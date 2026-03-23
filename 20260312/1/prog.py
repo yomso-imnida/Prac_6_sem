@@ -16,6 +16,9 @@ jgs     __\\'--'//__
 EOC
 """))
 
+# словарь с оружием для нанесения урона монстру
+weapons = {"sword": 10, "spear": 15, "axe": 20}
+
 class GameParam():
     def __init__(self):
         self.size = 10          # поле 10x10
@@ -68,14 +71,14 @@ class GameParam():
         if replaced:
             print("Replaced the old monster")
     
-    def attack(self):
+    def attack(self, damage):
         monster = self.monsters.get((self.tmp_x, self.tmp_y))
         if monster is None:
             print("No monster here")
             return
 
-        # урон: 10 hp
-        damage = min(10, monster['hp'])
+        # вычисление урона
+        damage = min(damage, monster['hp'])
         print(f"Attacked {monster['name']}, damage {damage} hp")
 
         # наносим урон монстру
@@ -205,10 +208,27 @@ class cmd_MUD(cmd.Cmd):
         self.game.addmon(name, hello, hp, x, y)
     
     def do_attack(self, arg):
-        if arg:
+        try:
+            line_split = shlex.split(arg)
+        except ValueError:
             print("Invalid arguments")
             return
-        self.game.attack()
+        
+        weapon = "sword"
+
+        if len(line_split) == 0:
+            pass    # если нет аргементов -> по дефолту урон 10, т.е. оружие - sword
+        elif len(line_split) == 2 and line_split[0] == "with":
+            weapon = line_split[1]
+        else:
+            print("Invalid arguments")
+            return
+
+        if weapon not in weapons:
+            print("Invalid arguments")
+            return
+
+        self.game.attack(weapons[weapon])
 
     # вызывается, когда неизвестная команда (в старой версии - последний else)
     def default(self, arg):
