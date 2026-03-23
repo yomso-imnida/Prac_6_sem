@@ -81,9 +81,12 @@ class GameParam():
         monster = self.monsters.get((self.tmp_x, self.tmp_y))
 
         if monster is None:
-            print("No monster here")
+            if monster_name is None:
+                print("No monster here")
+            else:
+                print(f"No {monster_name} here")
             return
-        if monster_name is None and monster["name"] != monster_name:
+        if monster_name is not None and monster["name"] != monster_name:
             print(f"No {monster_name} here")
             return
 
@@ -230,6 +233,9 @@ class cmd_MUD(cmd.Cmd):
         if len(line_split) == 0:
             pass    # если нет аргементов -> по дефолту урон 10, т.е. оружие - sword
         elif len(line_split) == 1:
+            if line_split[0] == "with":
+                print("Invalid arguments")
+                return
             monster_name = line_split[0]
         elif len(line_split) == 2 and line_split[0] == "with":
             weapon = line_split[1]
@@ -241,21 +247,26 @@ class cmd_MUD(cmd.Cmd):
             return
 
         if weapon not in weapons:
-            print("Invalid arguments")
+            print("Unknown weapon")
             return
 
         self.game.attack(weapons[weapon], monster_name)
 
     # text - имя монстра, которое уже начали вводить
     def complete_attack(self, text, line, i_begin, i_end):
-        line_split = shlex.split(line[:i_begin])        # смотрим, какая команда введена
+        line_split = shlex.split(line[:i_begin])        # смотрим, какая команда введена (до text)
 
         if len(line_split) == 1:
             # смотрим на все имена, которые начинаются с text
-            return [name for name in get_monsters() if name.startswitch(text)]
+            return [name for name in get_monsters() if name.startswith(text)]
+
+        if (len(line_split) == 2) and (line_split[0] == "attack") and (line_split[1] == "with"):
+            return [name for name in weapons if name.startswith(text)]
+
+        if (len(line_split) == 3) and (line_split[0] == "attack") and (line_split[2] == "with"):
+            return [name for name in weapons if name.startswith(text)]
 
         return []
-
 
     # вызывается, когда неизвестная команда (в старой версии - последний else)
     def default(self, arg):
@@ -265,132 +276,13 @@ class cmd_MUD(cmd.Cmd):
     def emptyline(self):
         pass
 
+    def do_EOF(self, arg):
+        print()
+        return True
+
 
 ''' ----- main ----- '''
 
 print("<<< Welcome to Python-MUD 0.1 >>>")
 
 cmd_MUD().cmdloop()
-
-'''
-# addmon <monster_name> hello <hello_string> hp <hitpoints> coords <x> <y>
-
-for in_line in sys.stdin:
-    line = in_line.strip()
-
-    # пропуск пустых строк
-    if not line:
-        continue
-
-    # line_split[0] - addmon, ine_split[1] - имя монстра, остальное - в рандомном порядке
-    try:
-        line_split = shlex.split(line)
-    except ValueError:
-        print("Invalid arguments")
-        continue
-
-    if not line_split:
-        continue
-
-    cmd = line_split[0]                 # команда
-
-    if cmd in ["up", "down", "left", "right"]:
-        # если есть аргументы у движения - ошибка
-        if len(line_split) != 1:
-            print("Invalid arguments")
-            continue
-
-        # само движение
-        elif cmd == "up":
-            tmp_y = wrap(tmp_y - 1)
-        elif cmd == "down":
-            tmp_y = wrap(tmp_y + 1)
-        elif cmd == "left":
-            tmp_x = wrap(tmp_x - 1)
-        else:                           # cmd == "right"
-            tmp_x = wrap(tmp_x + 1)
-        
-        print(f"Moved to {tmp_x, tmp_y}")
-        encounter(tmp_x, tmp_y)                 # проверка на "происшествие"
-
-    # добавляем монстра
-    elif cmd == "addmon":
-        if len(line_split) < 2:
-            print("Invalid arguments")
-            continue
-
-        # преобразовываем координаты
-        name = line_split[1]        # имя монстра
-        hello, hp = None, None
-        x, y = None, None
-
-        i = 2
-        flag = False                # для ошибок
-
-        while i < len(line_split):
-            match line_split[i]:
-                case "hello":
-                    if (i+1) >= len(line_split):
-                        print("Invalid arguments")
-                        flag = True
-                        break
-                    hello = line_split[i+1]
-                    i += 2
-
-                case "hp":
-                    if (i+1) >= len(line_split):
-                        print("Invalid arguments")
-                        flag = True
-                        break
-                    try:
-                        hp = int(line_split[i+1])
-                    except ValueError:
-                        print("Invalid arguments")
-                        flag = True
-                        break
-                    if hp <= 0:
-                        print("Invalid arguments")
-                        flag = True
-                        break
-                    i += 2
-
-                case "coords":
-                    if (i+2) >= len(line_split):
-                        print("Invalid arguments")
-                        flag = True
-                        break
-                    try:
-                        x = int(line_split[i+1])
-                        y = int(line_split[i+2])
-                    except ValueError:
-                        print("Invalid arguments")
-                        flag = True
-                        break
-                    i += 3
-
-                case _:
-                    print("Invalid arguments")
-                    flag = True
-                    break
-
-        if flag:
-            continue
-
-        if (hello is None) or (hp is None) or (x is None) or (y is None):
-            print("Invalid arguments")
-            continue
-
-        if name not in cowsay.list_cows() and name != "jgsbat":
-            print("Cannot add unknown monster")
-            continue
-
-        replaced = (x, y) in monsters
-        monsters[(x, y)] = {"name": name, "hello": hello, "hp": hp}
-        print(f"Added monster {name} to ({x}, {y}) saying {hello}")
-
-        if replaced:
-            print("Replaced the old monster")
-
-    else:
-        print("Invalid command")
-'''
