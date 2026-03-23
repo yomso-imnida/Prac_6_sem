@@ -16,6 +16,10 @@ jgs     __\\'--'//__
 EOC
 """))
 
+# список монстров в игре
+def get_monsters():
+    return cowsay.list_cows() + ["jgsbat"]
+
 class GameParam():
     def __init__(self):
         self.size = 10          # поле 10x10
@@ -221,6 +225,16 @@ class cmd_MUD(cmd.Cmd):
             self.game.attack(line_split[0])
         else:
             print("Invalid arguments")
+
+    # text - имя монстра, которое уже начали вводить
+    def complete_attack(self, text, line, i_begin, i_end):
+        line_split = shlex.split(line[:i_begin])        # смотрим, какая команда введена
+
+        if len(line_split) == 1:
+            # смотрим на все имена, которые начинаются с text
+            return [name for name in get_monsters() if name.startswitch(text)]
+
+        return []
 
     # вызывается, когда неизвестная команда (в старой версии - последний else)
     def default(self, arg):
