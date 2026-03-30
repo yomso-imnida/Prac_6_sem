@@ -23,10 +23,17 @@ class cmd_MUD(cmd.Cmd):
         cmd.Cmd.__init__(self)
 
         # в клиенте больше не хранится состояние игры; он просто подключается к серверу, и происходит обмен командами
+        '''
+        Что делает клиент:
+            1. прочитывает команды
+            2. отправляет серверу
+            3. получает ответ и печатает
+        '''
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect(("127.0.0.1", 1337))
         self.socket_file = self.sock.makefile("r")
-
+    
+    # весь вывод
     def print_res(self, res):
         match res['status']:
             case "moved":
@@ -169,13 +176,17 @@ class cmd_MUD(cmd.Cmd):
         if flag:
             return
 
+        # про монстра должна быть известна полная информация
         if (hello is None) or (hp is None) or (x is None) or (y is None):
             print("Invalid arguments")
             return
 
+        # quote - чтобы с пробелами нормально обработалось
         request = f"addmon {shlex.quote(name)} {shlex.quote(hello)} {hp} {x} {y}"
         self.print_res(self.send_request(request))
     
+    # могут быть команды вида: attack, attack <monster_name>,
+    # attack with <weapon>, attack <monster_name> with <weapon>
     def do_attack(self, arg):
         try:
             line_split = shlex.split(arg)
@@ -184,20 +195,24 @@ class cmd_MUD(cmd.Cmd):
             return
         
         monster_name = None
-        weapon = "sword"
+        weapon = "sword"            # по дефолту оружие - sword
 
         if len(line_split) == 0:
-            pass    # если нет аргементов -> по дефолту урон 10, т.е. оружие - sword
+            pass                    # если нет аргементов -> по дефолту урон 10
+
         elif len(line_split) == 1:
             if line_split[0] == "with":
                 print("Invalid arguments")
                 return
             monster_name = line_split[0]
+        
         elif len(line_split) == 2 and line_split[0] == "with":
             weapon = line_split[1]
+        
         elif len(line_split) == 3 and line_split[1] == "with":
             monster_name = line_split[0]
             weapon = line_split[2]
+        
         else:
             print("Invalid arguments")
             return
@@ -215,18 +230,20 @@ class cmd_MUD(cmd.Cmd):
 
         self.print_res(self.send_request(request))
 
-    # text - имя монстра, которое уже начали вводить
-    def complete_attack(self, text, line, i_begin, i_end):
-        line_split = shlex.split(line[:i_begin])        # смотрим, какая команда введена (до text)
+    # автодополнение для attack
+    def complete_attack(self, text, line, i_begin, i_end):          # text - имя монстра, которое уже начали вводить
+        line_split = shlex.split(line[:i_begin])                    # смотрим, какая команда введена (до text)
 
         if len(line_split) == 1:
-            # смотрим на все имена, которые начинаются с text
+            # смотрим на все имена, которые начинаются с text   (после attack)
             return [name for name in get_monsters() if name.startswith(text)]
 
         if (len(line_split) == 2) and (line_split[0] == "attack") and (line_split[1] == "with"):
+            # смотрим на оружие   (после attack with)
             return [name for name in weapons if name.startswith(text)]
 
         if (len(line_split) == 3) and (line_split[0] == "attack") and (line_split[2] == "with"):
+            # смотрим на оружие   (после attack <monster> with)
             return [name for name in weapons if name.startswith(text)]
 
         return []
@@ -239,6 +256,7 @@ class cmd_MUD(cmd.Cmd):
     def emptyline(self):
         pass
 
+    # чтобы на ctrl+D программа завершалась
     def do_EOF(self, arg):
         print()
         self.socket_file.close()
