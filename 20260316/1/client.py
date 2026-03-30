@@ -1,6 +1,6 @@
-import cmd, shlex, cowsay
+import cmd, shlex, cowsay, socket, json
 from io import StringIO
-from server import GameParam, weapons, get_monsters
+from server import weapons, get_monsters
 
 jgsbat = cowsay.read_dot_cow(StringIO(r"""
 $the_cow = <<EOC;
@@ -21,7 +21,11 @@ class cmd_MUD(cmd.Cmd):
 
     def __init__(self):
         cmd.Cmd.__init__(self)
-        self.game = GameParam()
+
+        # в клиенте больше не хранится состояние игры; он просто подключается к серверу, и происходит обмен командами
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.sock.connect(("127.0.0.1", 1337))
+        self.socket_file = self.sock.makefile("r")
 
     def print_res(self, res):
         match res['status']:
@@ -58,31 +62,36 @@ class cmd_MUD(cmd.Cmd):
             case "error":
                 print(res['message'])
 
+    # отправляется строка с командой; ответ - это json-строка
+    def send_request(self, line):
+        self.sock.sendall((line + "\n").encode())           # sendall - отправка всех данных
+        return json.loads(self.socket_file.readline())
+
     # если есть аргументы у движения - ошибка
 
     def do_up(self, arg):
         if arg:
             print("Invalid arguments")
             return
-        self.print_res(self.game.movements("up"))
+        self.print_res(self.send_request("move 0 -1"))
     
     def do_down(self, arg):
         if arg:
             print("Invalid arguments")
             return
-        self.print_res(self.game.movements("down"))
+        self.print_res(self.send_request("move 0 1"))
         
     def do_left(self, arg):
         if arg:
             print("Invalid arguments")
             return
-        self.print_res(self.game.movements("left"))
+        self.print_res(self.send_request("move -1 0"))
 
     def do_right(self, arg):
         if arg:
             print("Invalid arguments")
             return
-        self.print_res(self.game.movements("right"))
+        self.print_res(self.send_request("move 1 0"))
 
     def do_addmon(self, arg):
         try:
@@ -164,7 +173,8 @@ class cmd_MUD(cmd.Cmd):
             print("Invalid arguments")
             return
 
-        self.print_res(self.game.addmon(name, hello, hp, x, y))
+        request = f"addmon {shlex.quote(name)} {shlex.quote(hello)} {hp} {x} {y}"
+        self.print_res(self.send_request(request))
     
     def do_attack(self, arg):
         try:
@@ -196,7 +206,14 @@ class cmd_MUD(cmd.Cmd):
             print("Unknown weapon")
             return
 
-        self.print_res(self.game.attack(weapons[weapon], monster_name))
+        damage = weapons[weapon]
+
+        if monster_name is None:
+            request = f"attack {damage}"
+        else:
+            request = f"attack {shlex.quote(monster_name)} {damage}"
+
+        self.print_res(self.send_request(request))
 
     # text - имя монстра, которое уже начали вводить
     def complete_attack(self, text, line, i_begin, i_end):
@@ -224,6 +241,8 @@ class cmd_MUD(cmd.Cmd):
 
     def do_EOF(self, arg):
         print()
+        self.socket_file.close()
+        self.sock.close()
         return True
 
 
