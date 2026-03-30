@@ -1,6 +1,20 @@
-import cmd, shlex
-
+import cmd, shlex, cowsay
+from io import StringIO
 from server import GameParam, weapons, get_monsters
+
+jgsbat = cowsay.read_dot_cow(StringIO(r"""
+$the_cow = <<EOC;
+ ,_                    _,
+ ) '-._  ,_    _,  _.-' (
+ )  _.-'.|\\--//|.'-._  (
+  )'   .'\/o\/o\/'.   `(
+   ) .' . \====/ . '. (
+    )  / <<    >> \  (
+     '-._/``  ``\_.-'
+jgs     __\\'--'//__
+       (((""`  `"")))
+EOC
+"""))
 
 class cmd_MUD(cmd.Cmd):
     prompt = '>>> '
@@ -9,31 +23,66 @@ class cmd_MUD(cmd.Cmd):
         cmd.Cmd.__init__(self)
         self.game = GameParam()
 
+    def print_res(self, res):
+        match res['status']:
+            case "moved":
+                print(f"Moved to ({res['x']}, {res['y']})")
+
+                enc = res["encounter"]
+                if enc is not None:
+                    if enc["name"] == "jgsbat":
+                        print(cowsay.cowsay(enc['hello'], cowfile=jgsbat))
+                    else:
+                        print(cowsay.cowsay(enc['hello'], cow=enc['name']))
+            
+            case "addmon":
+                print(f"Added monster {res['name']} to ({res['x']}, {res['y']}) saying {res['hello']}")
+
+                if res["replaced"]:
+                    print("Replaced the old monster")
+
+            case "no_monster":
+                if res['name'] is None:
+                    print("No monster here")
+                else:
+                    print(f"No {res['name']} here")
+
+            case "attack":
+                print(f"Attacked {res['name']}, damage {res['damage']} hp")
+
+                if res["died"]:
+                    print(f"{res['name']} died")
+                else:
+                    print(f"{res['name']} now has {res['hp_left']}")
+
+            case "error":
+                print(res['message'])
+
     # если есть аргументы у движения - ошибка
 
     def do_up(self, arg):
         if arg:
             print("Invalid arguments")
             return
-        self.game.movements("up")
+        self.print_res(self.game.movements("up"))
     
     def do_down(self, arg):
         if arg:
             print("Invalid arguments")
             return
-        self.game.movements("down")
+        self.print_res(self.game.movements("down"))
         
     def do_left(self, arg):
         if arg:
             print("Invalid arguments")
             return
-        self.game.movements("left")
+        self.print_res(self.game.movements("left"))
 
     def do_right(self, arg):
         if arg:
             print("Invalid arguments")
             return
-        self.game.movements("right")
+        self.print_res(self.game.movements("right"))
 
     def do_addmon(self, arg):
         try:
@@ -115,7 +164,7 @@ class cmd_MUD(cmd.Cmd):
             print("Invalid arguments")
             return
 
-        self.game.addmon(name, hello, hp, x, y)
+        self.print_res(self.game.addmon(name, hello, hp, x, y))
     
     def do_attack(self, arg):
         try:
@@ -147,7 +196,7 @@ class cmd_MUD(cmd.Cmd):
             print("Unknown weapon")
             return
 
-        self.game.attack(weapons[weapon], monster_name)
+        self.print_res(self.game.attack(weapons[weapon], monster_name))
 
     # text - имя монстра, которое уже начали вводить
     def complete_attack(self, text, line, i_begin, i_end):

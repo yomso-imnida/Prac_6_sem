@@ -43,10 +43,7 @@ class GameParam():
         if monster is None:
             return
         
-        if monster["name"] == "jgsbat":
-            print(cowsay.cowsay(monster["hello"], cowfile=jgsbat))
-        else:
-            print(cowsay.cowsay(monster["hello"], cow=monster["name"]))
+        return { "name": monster["name"], "hello": monster["hello"] }
 
     # перемещения
     def movements(self, command):
@@ -60,46 +57,36 @@ class GameParam():
             case "right":
                 self.tmp_x = self.wrap(self.tmp_x + 1)
         
-        print(f"Moved to {self.tmp_x, self.tmp_y}")
-        self.encounter(self.tmp_x, self.tmp_y)              # проверка на "происшествие"
-    
+        return { "status": "moved", "x": self.tmp_x, "y": self.tmp_y, "encounter": self.encounter(self.tmp_x, self.tmp_y) }
+
     # добавление / перезапись монстра
     def addmon(self, name, hello, hp, x, y):
-        if name not in cowsay.list_cows() and name != "jgsbat":
-            print("Cannot add unknown monster")
-            return
+        if name not in get_monsters():
+            return { "status": "error", "message": "Cannot add unknown monster" }
 
         replaced = (x, y) in self.monsters
         self.monsters[(x, y)] = {"name": name, "hello": hello, "hp": hp}
-        print(f"Added monster {name} to ({x}, {y}) saying {hello}")
-
-        if replaced:
-            print("Replaced the old monster")
+        
+        return { "status": "addmon", "name": name, "hello": hello, "x": x, "y": y, "replaced": replaced }
 
     def attack(self, damage, monster_name=None):
-
         monster = self.monsters.get((self.tmp_x, self.tmp_y))
 
         if monster is None:
-            if monster_name is None:
-                print("No monster here")
-            else:
-                print(f"No {monster_name} here")
-            return
+            return { "status": "no_monster", "name": monster_name }
+        
         if monster_name is not None and monster["name"] != monster_name:
-            print(f"No {monster_name} here")
-            return
+            return { "status": "no_monster", "name": monster_name }
+        
+        # вычисление и нанос урона
+        final_damage = min(damage, monster["hp"])
+        monster["hp"] -= final_damage
 
-        # вычисление урона
-        damage = min(damage, monster['hp'])
-        print(f"Attacked {monster['name']}, damage {damage} hp")
+        died = (monster["hp"] == 0)
+        name = monster["name"]
 
-        # наносим урон монстру
-        monster['hp'] -= damage
-
-        # либо убиваем монстра, либо выводим его hp
-        if monster['hp'] == 0:
-            print(f"{monster['name']} died")
+        if died:
             del self.monsters[(self.tmp_x, self.tmp_y)]
-        else:
-            print(f"{monster['name']} now has {monster['hp']}")
+
+        return { "status": "attack", "name": name, "damage": final_damage,
+                 "hp_left": 0 if died else monster['hp'], "died": died }
