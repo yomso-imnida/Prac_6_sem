@@ -1,0 +1,213 @@
+From 1733fec51d12cd5f6a02691c47bf3c227b7730cf Mon Sep 17 00:00:00 2001
+From: yomso-imnida <dashkan2003@gmail.com>
+Date: Mon, 30 Mar 2026 16:21:37 +0300
+Subject: [PATCH 3/4] Added client-server: socket
+
+---
+ 20260316/1/client.py | 37 ++++++++++++++++-----
+ 20260316/1/server.py | 79 ++++++++++++++++++++++++++++++++++++--------
+ 2 files changed, 94 insertions(+), 22 deletions(-)
+
+diff --git a/20260316/1/client.py b/20260316/1/client.py
+index 935a7db..e6cbe90 100644
+--- a/20260316/1/client.py
++++ b/20260316/1/client.py
+@@ -1,6 +1,6 @@
+-import cmd, shlex, cowsay
++import cmd, shlex, cowsay, socket, json
+ from io import StringIO
+-from server import GameParam, weapons, get_monsters
++from server import weapons, get_monsters
+ 
+ jgsbat = cowsay.read_dot_cow(StringIO(r"""
+ $the_cow = <<EOC;
+@@ -21,7 +21,11 @@ class cmd_MUD(cmd.Cmd):
+ 
+     def __init__(self):
+         cmd.Cmd.__init__(self)
+-        self.game = GameParam()
++
++        # в клиенте больше не хранится состояние игры; он просто подключается к серверу, и происходит обмен командами
++        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
++        self.sock.connect(("127.0.0.1", 1337))
++        self.socket_file = self.sock.makefile("r")
+ 
+     def print_res(self, res):
+         match res['status']:
+@@ -58,31 +62,36 @@ class cmd_MUD(cmd.Cmd):
+             case "error":
+                 print(res['message'])
+ 
++    # отправляется строка с командой; ответ - это json-строка
++    def send_request(self, line):
++        self.sock.sendall((line + "\n").encode())           # sendall - отправка всех данных
++        return json.loads(self.socket_file.readline())
++
+     # если есть аргументы у движения - ошибка
+ 
+     def do_up(self, arg):
+         if arg:
+             print("Invalid arguments")
+             return
+-        self.print_res(self.game.movements("up"))
++        self.print_res(self.send_request("move 0 -1"))
+     
+     def do_down(self, arg):
+         if arg:
+             print("Invalid arguments")
+             return
+-        self.print_res(self.game.movements("down"))
++        self.print_res(self.send_request("move 0 1"))
+         
+     def do_left(self, arg):
+         if arg:
+             print("Invalid arguments")
+             return
+-        self.print_res(self.game.movements("left"))
++        self.print_res(self.send_request("move -1 0"))
+ 
+     def do_right(self, arg):
+         if arg:
+             print("Invalid arguments")
+             return
+-        self.print_res(self.game.movements("right"))
++        self.print_res(self.send_request("move 1 0"))
+ 
+     def do_addmon(self, arg):
+         try:
+@@ -164,7 +173,8 @@ class cmd_MUD(cmd.Cmd):
+             print("Invalid arguments")
+             return
+ 
+-        self.print_res(self.game.addmon(name, hello, hp, x, y))
++        request = f"addmon {shlex.quote(name)} {shlex.quote(hello)} {hp} {x} {y}"
++        self.print_res(self.send_request(request))
+     
+     def do_attack(self, arg):
+         try:
+@@ -196,7 +206,14 @@ class cmd_MUD(cmd.Cmd):
+             print("Unknown weapon")
+             return
+ 
+-        self.print_res(self.game.attack(weapons[weapon], monster_name))
++        damage = weapons[weapon]
++
++        if monster_name is None:
++            request = f"attack {damage}"
++        else:
++            request = f"attack {shlex.quote(monster_name)} {damage}"
++
++        self.print_res(self.send_request(request))
+ 
+     # text - имя монстра, которое уже начали вводить
+     def complete_attack(self, text, line, i_begin, i_end):
+@@ -224,6 +241,8 @@ class cmd_MUD(cmd.Cmd):
+ 
+     def do_EOF(self, arg):
+         print()
++        self.socket_file.close()
++        self.sock.close()
+         return True
+ 
+ 
+diff --git a/20260316/1/server.py b/20260316/1/server.py
+index c049f26..21c3d3a 100644
+--- a/20260316/1/server.py
++++ b/20260316/1/server.py
+@@ -1,4 +1,4 @@
+-import cowsay
++import cowsay, shlex, asyncio, json
+ from io import StringIO
+ 
+ jgsbat = cowsay.read_dot_cow(StringIO(r"""
+@@ -46,18 +46,17 @@ class GameParam():
+         return { "name": monster["name"], "hello": monster["hello"] }
+ 
+     # перемещения
+-    def movements(self, command):
+-        match command:
+-            case "up":
+-                self.tmp_y = self.wrap(self.tmp_y - 1)
+-            case "down":
+-                self.tmp_y = self.wrap(self.tmp_y + 1)
+-            case "left":
+-                self.tmp_x = self.wrap(self.tmp_x - 1)
+-            case "right":
+-                self.tmp_x = self.wrap(self.tmp_x + 1)
+-        
+-        return { "status": "moved", "x": self.tmp_x, "y": self.tmp_y, "encounter": self.encounter(self.tmp_x, self.tmp_y) }
++    def move(self, dx, dy):
++        # серверная команда движения:
++        self.tmp_x = self.wrap(self.tmp_x + dx)
++        self.tmp_y = self.wrap(self.tmp_y + dy)
++
++        return {
++            "status": "moved",
++            "x": self.tmp_x,
++            "y": self.tmp_y,
++            "encounter": self.encounter(self.tmp_x, self.tmp_y)
++        }
+ 
+     # добавление / перезапись монстра
+     def addmon(self, name, hello, hp, x, y):
+@@ -90,3 +89,57 @@ class GameParam():
+ 
+         return { "status": "attack", "name": name, "damage": final_damage,
+                  "hp_left": 0 if died else monster['hp'], "died": died }
++    
++    def process_command(self, line):
++        cmd = shlex.split(line)
++
++        match cmd[0]:
++            case "move":
++                dx = int(cmd[1])
++                dy = int(cmd[2])
++                return self.move(dx, dy)
++
++            case "addmon":
++                name = cmd[1]
++                hello = cmd[2]
++                hp = int(cmd[3])
++                x = int(cmd[4])
++                y = int(cmd[5])
++                return self.addmon(name, hello, hp, x, y)
++
++            case "attack":
++                if len(cmd) == 2:
++                    damage = int(cmd[1])
++                    return self.attack(damage)
++                else:
++                    monster_name = cmd[1]
++                    damage = int(cmd[2])
++                    return self.attack(damage, monster_name)
++
++
++# объект, хранящий текущее состояние
++game = GameParam
++
++async def MUD(reader, writer):
++    while data := await reader.readline():
++        cmd = data.decode().strip()
++        res = game.process_command(cmd)
++
++        response = json.dumps(res) + "\n"
++        writer.write(response.encode())
++        await writer.drain()
++
++    writer.close()
++    await writer.wait_closed()
++
++
++''' ----- main ----- '''
++
++# локальный сервер на 1337 порту
++async def main():
++    server = await asyncio.start_server(MUD, "127.0.0.1", 1337)
++    async with server:
++        await server.serve_forever()
++
++if __name__ == '__main__':
++    asyncio.run(main())
+-- 
+2.53.0
+

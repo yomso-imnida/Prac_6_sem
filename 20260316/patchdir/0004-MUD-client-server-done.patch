@@ -1,0 +1,246 @@
+From b6efaa53f2d48e4e43c59e7681d1b30cb63466a1 Mon Sep 17 00:00:00 2001
+From: yomso-imnida <dashkan2003@gmail.com>
+Date: Mon, 30 Mar 2026 18:30:34 +0300
+Subject: [PATCH 4/4] MUD client-server done
+
+---
+ 20260316/1/client.py | 32 +++++++++++++++++++++++++-------
+ 20260316/1/server.py | 43 +++++++++++++++++++++++++++++++++----------
+ 2 files changed, 58 insertions(+), 17 deletions(-)
+
+diff --git a/20260316/1/client.py b/20260316/1/client.py
+index e6cbe90..06e110f 100644
+--- a/20260316/1/client.py
++++ b/20260316/1/client.py
+@@ -23,10 +23,17 @@ class cmd_MUD(cmd.Cmd):
+         cmd.Cmd.__init__(self)
+ 
+         # в клиенте больше не хранится состояние игры; он просто подключается к серверу, и происходит обмен командами
++        '''
++        Что делает клиент:
++            1. прочитывает команды
++            2. отправляет серверу
++            3. получает ответ и печатает
++        '''
+         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+         self.sock.connect(("127.0.0.1", 1337))
+         self.socket_file = self.sock.makefile("r")
+-
++    
++    # весь вывод
+     def print_res(self, res):
+         match res['status']:
+             case "moved":
+@@ -169,13 +176,17 @@ class cmd_MUD(cmd.Cmd):
+         if flag:
+             return
+ 
++        # про монстра должна быть известна полная информация
+         if (hello is None) or (hp is None) or (x is None) or (y is None):
+             print("Invalid arguments")
+             return
+ 
++        # quote - чтобы с пробелами нормально обработалось
+         request = f"addmon {shlex.quote(name)} {shlex.quote(hello)} {hp} {x} {y}"
+         self.print_res(self.send_request(request))
+     
++    # могут быть команды вида: attack, attack <monster_name>,
++    # attack with <weapon>, attack <monster_name> with <weapon>
+     def do_attack(self, arg):
+         try:
+             line_split = shlex.split(arg)
+@@ -184,20 +195,24 @@ class cmd_MUD(cmd.Cmd):
+             return
+         
+         monster_name = None
+-        weapon = "sword"
++        weapon = "sword"            # по дефолту оружие - sword
+ 
+         if len(line_split) == 0:
+-            pass    # если нет аргементов -> по дефолту урон 10, т.е. оружие - sword
++            pass                    # если нет аргементов -> по дефолту урон 10
++
+         elif len(line_split) == 1:
+             if line_split[0] == "with":
+                 print("Invalid arguments")
+                 return
+             monster_name = line_split[0]
++        
+         elif len(line_split) == 2 and line_split[0] == "with":
+             weapon = line_split[1]
++        
+         elif len(line_split) == 3 and line_split[1] == "with":
+             monster_name = line_split[0]
+             weapon = line_split[2]
++        
+         else:
+             print("Invalid arguments")
+             return
+@@ -215,18 +230,20 @@ class cmd_MUD(cmd.Cmd):
+ 
+         self.print_res(self.send_request(request))
+ 
+-    # text - имя монстра, которое уже начали вводить
+-    def complete_attack(self, text, line, i_begin, i_end):
+-        line_split = shlex.split(line[:i_begin])        # смотрим, какая команда введена (до text)
++    # автодополнение для attack
++    def complete_attack(self, text, line, i_begin, i_end):          # text - имя монстра, которое уже начали вводить
++        line_split = shlex.split(line[:i_begin])                    # смотрим, какая команда введена (до text)
+ 
+         if len(line_split) == 1:
+-            # смотрим на все имена, которые начинаются с text
++            # смотрим на все имена, которые начинаются с text   (после attack)
+             return [name for name in get_monsters() if name.startswith(text)]
+ 
+         if (len(line_split) == 2) and (line_split[0] == "attack") and (line_split[1] == "with"):
++            # смотрим на оружие   (после attack with)
+             return [name for name in weapons if name.startswith(text)]
+ 
+         if (len(line_split) == 3) and (line_split[0] == "attack") and (line_split[2] == "with"):
++            # смотрим на оружие   (после attack <monster> with)
+             return [name for name in weapons if name.startswith(text)]
+ 
+         return []
+@@ -239,6 +256,7 @@ class cmd_MUD(cmd.Cmd):
+     def emptyline(self):
+         pass
+ 
++    # чтобы на ctrl+D программа завершалась
+     def do_EOF(self, arg):
+         print()
+         self.socket_file.close()
+diff --git a/20260316/1/server.py b/20260316/1/server.py
+index 21c3d3a..31ef6ab 100644
+--- a/20260316/1/server.py
++++ b/20260316/1/server.py
+@@ -19,7 +19,7 @@ EOC
+ weapons = {"sword": 10, "spear": 15, "axe": 20}
+ 
+ 
+-# список монстров в игре
++# список допустимых в игре монстров
+ def get_monsters():
+     return cowsay.list_cows() + ["jgsbat"]
+ 
+@@ -29,7 +29,7 @@ class GameParam():
+         self.size = 10          # поле 10x10
+         self.tmp_x = 0          # старт игрока в (0, 0)
+         self.tmp_y = 0
+-        self.monsters = {}      # словарь {"name": ..., "hello": ..., "hp": ...}
++        self.monsters = {}      # словарь {"name": ..., "hello": ..., "hp": ...}; ключ - (x, y)
+     
+     # перенос на другой край поля (если произошёл выход за границы)
+     def wrap(self, coordinate):
+@@ -39,18 +39,19 @@ class GameParam():
+     def encounter(self, x, y):
+         monster = self.monsters.get((x, y))
+ 
+-        # если монстр есть -> печать приветствия
+         if monster is None:
+             return
+         
++        # если монстр есть -> печать приветствия
+         return { "name": monster["name"], "hello": monster["hello"] }
+ 
+     # перемещения
+     def move(self, dx, dy):
+-        # серверная команда движения:
++        # серверная команда движения
+         self.tmp_x = self.wrap(self.tmp_x + dx)
+         self.tmp_y = self.wrap(self.tmp_y + dy)
+ 
++        # отправка инф. о перемещении клиенту
+         return {
+             "status": "moved",
+             "x": self.tmp_x,
+@@ -60,20 +61,26 @@ class GameParam():
+ 
+     # добавление / перезапись монстра
+     def addmon(self, name, hello, hp, x, y):
++        # может ли быть такой монстр в игре
+         if name not in get_monsters():
+             return { "status": "error", "message": "Cannot add unknown monster" }
+ 
++        # перезапись монстра в клетке
+         replaced = (x, y) in self.monsters
+         self.monsters[(x, y)] = {"name": name, "hello": hello, "hp": hp}
+-        
++
++        # отправка инф. о том, какой монстр теперь в этой клетке
+         return { "status": "addmon", "name": name, "hello": hello, "x": x, "y": y, "replaced": replaced }
+ 
++    # атака на монстра в данной клетке
+     def attack(self, damage, monster_name=None):
+         monster = self.monsters.get((self.tmp_x, self.tmp_y))
+ 
++        # если монстра нет -> говорим клиенту, что его нет
+         if monster is None:
+             return { "status": "no_monster", "name": monster_name }
+         
++        # если клиент ввёл имя монстра, которого нет в этой клетке -> говорим, что такого монстра здесь нет
+         if monster_name is not None and monster["name"] != monster_name:
+             return { "status": "no_monster", "name": monster_name }
+         
+@@ -84,12 +91,15 @@ class GameParam():
+         died = (monster["hp"] == 0)
+         name = monster["name"]
+ 
++        # смерть монстра
+         if died:
+             del self.monsters[(self.tmp_x, self.tmp_y)]
+ 
++        # сообщаем клиенту, какой монстр с каким кол-вом hp остался в клетке
+         return { "status": "attack", "name": name, "damage": final_damage,
+                  "hp_left": 0 if died else monster['hp'], "died": died }
+     
++    # разбор командной строки, выполнение нужной команды
+     def process_command(self, line):
+         cmd = shlex.split(line)
+ 
+@@ -117,10 +127,21 @@ class GameParam():
+                     return self.attack(damage, monster_name)
+ 
+ 
++''' ----- main ----- '''
++
+ # объект, хранящий текущее состояние
+-game = GameParam
++game = GameParam()
+ 
++# обработка подключения клиента
+ async def MUD(reader, writer):
++    '''
++    Клиент присылает строку (команду)
++    Сервер, в свою очередь:
++        1. читает строку
++        2. вызывает process_command
++        3. преобразовывает ответ в json
++        4. отправляет ответ клиенту
++    '''
+     while data := await reader.readline():
+         cmd = data.decode().strip()
+         res = game.process_command(cmd)
+@@ -132,14 +153,16 @@ async def MUD(reader, writer):
+     writer.close()
+     await writer.wait_closed()
+ 
+-
+-''' ----- main ----- '''
+-
+ # локальный сервер на 1337 порту
++# клиенту нужно подключаться к 127.0.0.1:1337
+ async def main():
+     server = await asyncio.start_server(MUD, "127.0.0.1", 1337)
+     async with server:
+         await server.serve_forever()
+ 
+ if __name__ == '__main__':
+-    asyncio.run(main())
++    try:
++        asyncio.run(main())
++    except KeyboardInterrupt:
++        print()
++        print("Server stopped")
+-- 
+2.53.0
+

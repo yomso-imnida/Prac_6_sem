@@ -1,0 +1,212 @@
+From 025830a6e4d0f9ffe0b25919c341dcf7eb580941 Mon Sep 17 00:00:00 2001
+From: yomso-imnida <dashkan2003@gmail.com>
+Date: Mon, 30 Mar 2026 03:22:46 +0300
+Subject: [PATCH 2/4] Transferred print to client.py
+
+---
+ 20260316/1/client.py | 65 ++++++++++++++++++++++++++++++++++++++------
+ 20260316/1/server.py | 53 ++++++++++++++----------------------
+ 2 files changed, 77 insertions(+), 41 deletions(-)
+
+diff --git a/20260316/1/client.py b/20260316/1/client.py
+index d60ea4a..935a7db 100644
+--- a/20260316/1/client.py
++++ b/20260316/1/client.py
+@@ -1,7 +1,21 @@
+-import cmd, shlex
+-
++import cmd, shlex, cowsay
++from io import StringIO
+ from server import GameParam, weapons, get_monsters
+ 
++jgsbat = cowsay.read_dot_cow(StringIO(r"""
++$the_cow = <<EOC;
++ ,_                    _,
++ ) '-._  ,_    _,  _.-' (
++ )  _.-'.|\\--//|.'-._  (
++  )'   .'\/o\/o\/'.   `(
++   ) .' . \====/ . '. (
++    )  / <<    >> \  (
++     '-._/``  ``\_.-'
++jgs     __\\'--'//__
++       (((""`  `"")))
++EOC
++"""))
++
+ class cmd_MUD(cmd.Cmd):
+     prompt = '>>> '
+ 
+@@ -9,31 +23,66 @@ class cmd_MUD(cmd.Cmd):
+         cmd.Cmd.__init__(self)
+         self.game = GameParam()
+ 
++    def print_res(self, res):
++        match res['status']:
++            case "moved":
++                print(f"Moved to ({res['x']}, {res['y']})")
++
++                enc = res["encounter"]
++                if enc is not None:
++                    if enc["name"] == "jgsbat":
++                        print(cowsay.cowsay(enc['hello'], cowfile=jgsbat))
++                    else:
++                        print(cowsay.cowsay(enc['hello'], cow=enc['name']))
++            
++            case "addmon":
++                print(f"Added monster {res['name']} to ({res['x']}, {res['y']}) saying {res['hello']}")
++
++                if res["replaced"]:
++                    print("Replaced the old monster")
++
++            case "no_monster":
++                if res['name'] is None:
++                    print("No monster here")
++                else:
++                    print(f"No {res['name']} here")
++
++            case "attack":
++                print(f"Attacked {res['name']}, damage {res['damage']} hp")
++
++                if res["died"]:
++                    print(f"{res['name']} died")
++                else:
++                    print(f"{res['name']} now has {res['hp_left']}")
++
++            case "error":
++                print(res['message'])
++
+     # если есть аргументы у движения - ошибка
+ 
+     def do_up(self, arg):
+         if arg:
+             print("Invalid arguments")
+             return
+-        self.game.movements("up")
++        self.print_res(self.game.movements("up"))
+     
+     def do_down(self, arg):
+         if arg:
+             print("Invalid arguments")
+             return
+-        self.game.movements("down")
++        self.print_res(self.game.movements("down"))
+         
+     def do_left(self, arg):
+         if arg:
+             print("Invalid arguments")
+             return
+-        self.game.movements("left")
++        self.print_res(self.game.movements("left"))
+ 
+     def do_right(self, arg):
+         if arg:
+             print("Invalid arguments")
+             return
+-        self.game.movements("right")
++        self.print_res(self.game.movements("right"))
+ 
+     def do_addmon(self, arg):
+         try:
+@@ -115,7 +164,7 @@ class cmd_MUD(cmd.Cmd):
+             print("Invalid arguments")
+             return
+ 
+-        self.game.addmon(name, hello, hp, x, y)
++        self.print_res(self.game.addmon(name, hello, hp, x, y))
+     
+     def do_attack(self, arg):
+         try:
+@@ -147,7 +196,7 @@ class cmd_MUD(cmd.Cmd):
+             print("Unknown weapon")
+             return
+ 
+-        self.game.attack(weapons[weapon], monster_name)
++        self.print_res(self.game.attack(weapons[weapon], monster_name))
+ 
+     # text - имя монстра, которое уже начали вводить
+     def complete_attack(self, text, line, i_begin, i_end):
+diff --git a/20260316/1/server.py b/20260316/1/server.py
+index 58c1041..c049f26 100644
+--- a/20260316/1/server.py
++++ b/20260316/1/server.py
+@@ -43,10 +43,7 @@ class GameParam():
+         if monster is None:
+             return
+         
+-        if monster["name"] == "jgsbat":
+-            print(cowsay.cowsay(monster["hello"], cowfile=jgsbat))
+-        else:
+-            print(cowsay.cowsay(monster["hello"], cow=monster["name"]))
++        return { "name": monster["name"], "hello": monster["hello"] }
+ 
+     # перемещения
+     def movements(self, command):
+@@ -60,46 +57,36 @@ class GameParam():
+             case "right":
+                 self.tmp_x = self.wrap(self.tmp_x + 1)
+         
+-        print(f"Moved to {self.tmp_x, self.tmp_y}")
+-        self.encounter(self.tmp_x, self.tmp_y)              # проверка на "происшествие"
+-    
++        return { "status": "moved", "x": self.tmp_x, "y": self.tmp_y, "encounter": self.encounter(self.tmp_x, self.tmp_y) }
++
+     # добавление / перезапись монстра
+     def addmon(self, name, hello, hp, x, y):
+-        if name not in cowsay.list_cows() and name != "jgsbat":
+-            print("Cannot add unknown monster")
+-            return
++        if name not in get_monsters():
++            return { "status": "error", "message": "Cannot add unknown monster" }
+ 
+         replaced = (x, y) in self.monsters
+         self.monsters[(x, y)] = {"name": name, "hello": hello, "hp": hp}
+-        print(f"Added monster {name} to ({x}, {y}) saying {hello}")
+-
+-        if replaced:
+-            print("Replaced the old monster")
++        
++        return { "status": "addmon", "name": name, "hello": hello, "x": x, "y": y, "replaced": replaced }
+ 
+     def attack(self, damage, monster_name=None):
+-
+         monster = self.monsters.get((self.tmp_x, self.tmp_y))
+ 
+         if monster is None:
+-            if monster_name is None:
+-                print("No monster here")
+-            else:
+-                print(f"No {monster_name} here")
+-            return
++            return { "status": "no_monster", "name": monster_name }
++        
+         if monster_name is not None and monster["name"] != monster_name:
+-            print(f"No {monster_name} here")
+-            return
+-
+-        # вычисление урона
+-        damage = min(damage, monster['hp'])
+-        print(f"Attacked {monster['name']}, damage {damage} hp")
++            return { "status": "no_monster", "name": monster_name }
++        
++        # вычисление и нанос урона
++        final_damage = min(damage, monster["hp"])
++        monster["hp"] -= final_damage
+ 
+-        # наносим урон монстру
+-        monster['hp'] -= damage
++        died = (monster["hp"] == 0)
++        name = monster["name"]
+ 
+-        # либо убиваем монстра, либо выводим его hp
+-        if monster['hp'] == 0:
+-            print(f"{monster['name']} died")
++        if died:
+             del self.monsters[(self.tmp_x, self.tmp_y)]
+-        else:
+-            print(f"{monster['name']} now has {monster['hp']}")
++
++        return { "status": "attack", "name": name, "damage": final_damage,
++                 "hp_left": 0 if died else monster['hp'], "died": died }
+-- 
+2.53.0
+
