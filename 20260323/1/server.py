@@ -27,13 +27,29 @@ def get_monsters():
 class GameParam():
     def __init__(self):
         self.size = 10          # поле 10x10
-        self.tmp_x = 0          # старт игрока в (0, 0)
-        self.tmp_y = 0
         self.monsters = {}      # словарь {"name": ..., "hello": ..., "hp": ...}; ключ - (x, y)
+        self.players = {}       # {username: {"x": ..., "y": ...}}  -  координаты каждого пользователя
     
     # перенос на другой край поля (если произошёл выход за границы)
     def wrap(self, coordinate):
         return coordinate % self.size
+    
+    # добавление нового игрока
+    def add_player(self, username):
+        if username in self.players:
+            return False
+        
+        self.players[username] = {"x": 0, "y": 0}
+        return True
+    
+    # удаление игрока
+    def remove_players(self, username):
+        self.players.pop(username, None)
+    
+    # получение координат игрока
+    def get_pos(self, username):
+        player = self.players[username]
+        return player["x"], player["y"]
     
     # попадание игрока в клетку с монстром
     def encounter(self, x, y):
@@ -46,18 +62,16 @@ class GameParam():
         return { "name": monster["name"], "hello": monster["hello"] }
 
     # перемещения
-    def move(self, dx, dy):
+    def move(self, username, dx, dy):
+        player = self.players[username]
+
         # серверная команда движения
-        self.tmp_x = self.wrap(self.tmp_x + dx)
-        self.tmp_y = self.wrap(self.tmp_y + dy)
+        player["x"] = self.wrap(player["x"] + dx)
+        player["y"] = self.wrap(player["y"] + dy)
 
         # отправка инф. о перемещении клиенту
-        return {
-            "status": "moved",
-            "x": self.tmp_x,
-            "y": self.tmp_y,
-            "encounter": self.encounter(self.tmp_x, self.tmp_y)
-        }
+        x, y = player["x"], player["y"]
+        return x, y, self.encounter(x, y)
 
     # добавление / перезапись монстра
     def addmon(self, name, hello, hp, x, y):
@@ -73,8 +87,9 @@ class GameParam():
         return { "status": "addmon", "name": name, "hello": hello, "x": x, "y": y, "replaced": replaced }
 
     # атака на монстра в данной клетке
-    def attack(self, damage, monster_name=None):
-        monster = self.monsters.get((self.tmp_x, self.tmp_y))
+    def attack(self, username, damage, monster_name=None):
+        x, y = self.get_pos(username)
+        monster = self.monsters.get(x, y)
 
         # если монстра нет -> говорим клиенту, что его нет
         if monster is None:
@@ -93,7 +108,7 @@ class GameParam():
 
         # смерть монстра
         if died:
-            del self.monsters[(self.tmp_x, self.tmp_y)]
+            del self.monsters[(x, y)]
 
         # сообщаем клиенту, какой монстр с каким кол-вом hp остался в клетке
         return { "status": "attack", "name": name, "damage": final_damage,
