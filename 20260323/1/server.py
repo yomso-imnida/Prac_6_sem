@@ -115,14 +115,14 @@ class GameParam():
                  "hp_left": 0 if died else monster['hp'], "died": died }
     
     # разбор командной строки, выполнение нужной команды
-    def process_command(self, line):
+    def process_command(self, username, line):
         cmd = shlex.split(line)
 
         match cmd[0]:
             case "move":
                 dx = int(cmd[1])
                 dy = int(cmd[2])
-                return self.move(dx, dy)
+                return {"status": "move", "data": self.move(username, dx, dy)}
 
             case "addmon":
                 name = cmd[1]
@@ -135,17 +135,47 @@ class GameParam():
             case "attack":
                 if len(cmd) == 2:
                     damage = int(cmd[1])
-                    return self.attack(damage)
+                    return self.attack(username, damage)
                 else:
                     monster_name = cmd[1]
                     damage = int(cmd[2])
-                    return self.attack(damage, monster_name)
+                    return self.attack(username, damage, monster_name)
 
 
 ''' ----- main ----- '''
 
 # объект, хранящий текущее состояние
 game = GameParam()
+clients = {}                # список игроков
+
+# сообщение одному пользователю
+async def sent_to_one(writer, message):
+    writer.write((message + "\n").encode())
+    await writer.drain()            # await - приостановка
+
+# сообщение всем пользователям
+async def send_to_everyone(message):
+    dead_clients = []                   # имена пользователей, которые по какой-то причине отключились
+
+    # кидаем сообщение всем подключенным пользователям
+    for username, writer in clients.items():
+        try:
+            writer.write((message + "\n").encode())             # байт-строка отправляется в сокет
+        except Exception:
+            dead_clients.append(username)
+    
+    # доотправка сообщений
+    for username, writer in clients.items():
+        if username not in dead_clients:                        # проверка на случай, если уже решили, что нужно удалить пользователя
+            try:
+                await writer.drain()
+            except Exception:
+                dead_clients.append(username)
+    
+    # удаляем мертвых пользователей
+    for username in dead_clients:
+        clients.pop(username, None)
+        game.remove_players(username)
 
 # обработка подключения клиента
 async def MUD(reader, writer):
