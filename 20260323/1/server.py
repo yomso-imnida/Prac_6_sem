@@ -84,7 +84,7 @@ class GameParam():
         self.monsters[(x, y)] = {"name": name, "hello": hello, "hp": hp}
 
         # отправка инф. о том, какой монстр теперь в этой клетке
-        return { "status": "addmon", "name": name, "hello": hello, "x": x, "y": y, "replaced": replaced }
+        return { "status": "addmon", "name": name, "hello": hello, "hp": hp, "x": x, "y": y, "replaced": replaced }
 
     # атака на монстра в данной клетке
     def attack(self, username, damage, monster_name=None):
@@ -149,7 +149,7 @@ game = GameParam()
 clients = {}                # список игроков
 
 # сообщение одному пользователю
-async def sent_to_one(writer, message):
+async def send_to_one(writer, message):
     writer.write((message + "\n").encode())
     await writer.drain()            # await - приостановка
 
@@ -187,16 +187,101 @@ async def MUD(reader, writer):
         3. преобразовывает ответ в json
         4. отправляет ответ клиенту
     '''
-    while data := await reader.readline():
-        cmd = data.decode().strip()
-        res = game.process_command(cmd)
+    username = None
 
-        response = json.dumps(res) + "\n"
-        writer.write(response.encode())
-        await writer.drain()
+    try:
+        data = await reader.readline()
+        if not data:
+            writer.close()
+            await writer.wait_closed()
+            return
+        
+        username = data.decode().strip()
 
-    writer.close()
-    await writer.wait_closed()
+        if (not username) or (" " in username):
+            await send_to_one(writer, "Invalid usename")
+            writer.close()
+            await writer.wait_closed()
+            return
+        
+        if username in clients:
+            await send_to_one(writer, f"Usename {username} is already taken. Enter different username")
+            writer.close()
+            await writer.wait_closed()
+            return
+        
+        clients[username] = writer
+        game.add_player(username)
+
+        await send_to_one(writer, f"Welcome, {username}")
+        await send_to_everyone(f"{username} joined the MUD")
+
+        while (data := await reader.readline()):
+            cmd = data.decode().strip()
+
+            if not cmd:
+                continue
+
+            res = game.process_command(username, cmd)
+
+            match res["status"]:
+                case "move":
+                    x, y, encounter = res["data"]
+                    await send_to_one(writer, f"Moved to ({x}, {y})")
+
+                    if encounter is not None:
+                        if encounter["name"] == "jgsbat":
+                            hello = cowsay.cowsay(encounter["hello"], cowfile=jgsbat)
+                        else:
+                            hello = cowsay.cowsay(encounter["hello"], cow=encounter["name"])
+                            await send_to_one(writer, hello)
+
+                case "addmon":
+                    mess = (f"{username} added monster{res['name']}"
+                            f"to ({res['x']}, {res['y']}) with {res['hp']} hp")
+                    await send_to_everyone(mess)
+
+                    if res["replaced"]:
+                        await send_to_everyone("Replaced old monster")
+
+                case "no_monster":
+                    if res["name"] is None:
+                        await send_to_one(writer, "No monster")
+                    else:
+                        await send_to_one(writer, f"No {res['name']} here")
+
+                case "attack":
+                    if res["died"]:
+                        mess = (f"{username} attacked {res['name']}, damage {res['damage']} hp, "
+                                f"{res['name']} died")
+                    else:
+                        mess = (f"{username} attacked {res['name']}, damage {res['damage']} hp, "
+                                f"{res['name']} now has {res['damage']} hp")
+                    
+                    await send_to_everyone(mess)
+
+                case "error":
+                    await send_to_one(writer, res["message"])
+
+    finally:
+        if (username is not None) and (username in clients):
+            clients.pop(username, None)
+            game.remove_players(username)
+            await send_to_everyone(f"{username} left the MUD")
+
+        writer.close()
+        await writer.wait_closed()
+
+    # while data := await reader.readline():
+    #     cmd = data.decode().strip()
+    #     res = game.process_command(cmd)
+
+    #     response = json.dumps(res) + "\n"
+    #     writer.write(response.encode())
+    #     await writer.drain()
+
+    # writer.close()
+    # await writer.wait_closed()
 
 # локальный сервер на 1337 порту
 # клиенту нужно подключаться к 127.0.0.1:1337
