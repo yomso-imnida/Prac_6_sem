@@ -6,89 +6,78 @@ class cmd_MUD(cmd.Cmd):
     prompt = '>>> '
 
     def __init__(self, username):
-        cmd.Cmd.__init__(self)
-
-        # в клиенте больше не хранится состояние игры; он просто подключается к серверу, и происходит обмен командами
+        super().__init__()
         '''
-        Что делает клиент:
-            1. прочитывает команды
-            2. отправляет серверу
-            3. получает ответ и печатает
+        Клиент не хранит состояние игры. Он:
+        - читает команды, отправляет их серверу
+        - отдельно получает асинхронные сообщения
         '''
         self.username = username
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect(("127.0.0.1", 1337))
-        # self.socket_file = self.sock.makefile("r")
 
-        self.alive = True           # 
+        self.alive = True
         self.sock.sendall((self.username + "\n").encode())
+
+        self.receiver = threading.Thread(target=self.receive_loop, daemon=True)
+        self.receiver.start()
     
-    # весь вывод
-    def print_res(self, res):
-        match res['status']:
-            case "moved":
-                print(f"Moved to ({res['x']}, {res['y']})")
+    # отправка одной команды серверу
+    def send_line(self, line):
+        self.sock.sendall((line + "\n").encode())           # сервер читает команды построчно
 
-                enc = res["encounter"]
-                if enc is not None:
-                    if enc["name"] == "jgsbat":
-                        print(cowsay.cowsay(enc['hello'], cowfile=jgsbat))
-                    else:
-                        print(cowsay.cowsay(enc['hello'], cow=enc['name']))
-            
-            case "addmon":
-                print(f"Added monster {res['name']} to ({res['x']}, {res['y']}) saying {res['hello']}")
+    # отдельный поток, который постоянно слушает сервер
+    # как только от сервера приходит сообщение -> печатаем его
+    def receive_loop(self):
+        while self.alive:
+            try:
+                # читаем очередную порцию данных из сокета
+                data = self.sock.recv(1024)
+                if not data:
+                    # пустые данные -> соединение закрыто
+                    break
 
-                if res["replaced"]:
-                    print("Replaced the old monster")
+                # печатаем сообщение сервера
+                print()
+                print(data.decode(), end="")
+                # после асинхронного сообщения заново показываем приглашение к вводу
+                print(self.prompt, end="", flush=True)
 
-            case "no_monster":
-                if res['name'] is None:
-                    print("No monster here")
-                else:
-                    print(f"No {res['name']} here")
+            except OSError:
+                # если сокет уже закрыт -> выходим из цикла
+                break
 
-            case "attack":
-                print(f"Attacked {res['name']}, damage {res['damage']} hp")
-
-                if res["died"]:
-                    print(f"{res['name']} died")
-                else:
-                    print(f"{res['name']} now has {res['hp_left']}")
-
-            case "error":
-                print(res['message'])
-
-    # отправляется строка с командой; ответ - это json-строка
-    def send_request(self, line):
-        self.sock.sendall((line + "\n").encode())           # sendall - отправка всех данных
-        return json.loads(self.socket_file.readline())
+        self.alive = False
 
     # если есть аргументы у движения - ошибка
 
+    # up -> (0, -1)
     def do_up(self, arg):
         if arg:
             print("Invalid arguments")
             return
-        self.print_res(self.send_request("move 0 -1"))
+        self.send_line("move 0 -1")
     
+    # down -> (0, 1)
     def do_down(self, arg):
         if arg:
             print("Invalid arguments")
             return
-        self.print_res(self.send_request("move 0 1"))
-        
+        self.send_line("move 0 1")
+    
+    # left -> (-1, 0)
     def do_left(self, arg):
         if arg:
             print("Invalid arguments")
             return
-        self.print_res(self.send_request("move -1 0"))
+        self.send_line("move -1 0")
 
+    # right -> (1, 0)
     def do_right(self, arg):
         if arg:
             print("Invalid arguments")
             return
-        self.print_res(self.send_request("move 1 0"))
+        self.send_line("move 1 0")
 
     def do_addmon(self, arg):
         try:
@@ -173,7 +162,7 @@ class cmd_MUD(cmd.Cmd):
 
         # quote - чтобы с пробелами нормально обработалось
         request = f"addmon {shlex.quote(name)} {shlex.quote(hello)} {hp} {x} {y}"
-        self.print_res(self.send_request(request))
+        self.send_line(request)
     
     # могут быть команды вида: attack, attack <monster_name>,
     # attack with <weapon>, attack <monster_name> with <weapon>
@@ -188,7 +177,7 @@ class cmd_MUD(cmd.Cmd):
         weapon = "sword"            # по дефолту оружие - sword
 
         if len(line_split) == 0:
-            pass                    # если нет аргементов -> по дефолту урон 10
+            pass                    # если нет аргементов -> дефолтное оружие sword -> урон 10
 
         elif len(line_split) == 1:
             if line_split[0] == "with":
@@ -218,7 +207,7 @@ class cmd_MUD(cmd.Cmd):
         else:
             request = f"attack {shlex.quote(monster_name)} {damage}"
 
-        self.print_res(self.send_request(request))
+        self.send_line(request)
 
     # автодополнение для attack
     def complete_attack(self, text, line, i_begin, i_end):          # text - имя монстра, которое уже начали вводить
@@ -249,7 +238,7 @@ class cmd_MUD(cmd.Cmd):
     # чтобы на ctrl+D программа завершалась
     def do_EOF(self, arg):
         print()
-        self.socket_file.close()
+        self.alive = False
         self.sock.close()
         return True
 
@@ -258,4 +247,10 @@ class cmd_MUD(cmd.Cmd):
 
 print("<<< Welcome to Python-MUD 0.1 >>>")
 
-cmd_MUD().cmdloop()
+# имя пользователя передаётся при запуске клиента
+# python3 client.py <username>
+if len(sys.argv) != 2:
+    print("Usage: python3 client.py <username>")
+    raise SystemExit(1)
+
+cmd_MUD(sys.argv[1]).cmdloop()

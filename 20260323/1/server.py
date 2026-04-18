@@ -146,14 +146,16 @@ class GameParam():
 
 # объект, хранящий текущее состояние
 game = GameParam()
-clients = {}                # список игроков
+clients = {}                # {username: writer} - подключенные пользователи
 
 # сообщение одному пользователю
 async def send_to_one(writer, message):
     writer.write((message + "\n").encode())
+
+    # ждем, пока данные из буфера уйдут в сокет
     await writer.drain()            # await - приостановка
 
-# сообщение всем пользователям
+# сообщение всем пользователям (широковещательное сообщение)
 async def send_to_everyone(message):
     dead_clients = []                   # имена пользователей, которые по какой-то причине отключились
 
@@ -180,22 +182,25 @@ async def send_to_everyone(message):
 # обработка подключения клиента
 async def MUD(reader, writer):
     '''
-    Клиент присылает строку (команду)
-    Сервер, в свою очередь:
-        1. читает строку
-        2. вызывает process_command
-        3. преобразовывает ответ в json
-        4. отправляет ответ клиенту
+    Клиент: сначала присылает имя пользователя, затем строки с командами
+    Сервер:
+        1. читает имя и проверяет, свободно ли оно
+        2. запоминает игрока
+        3. читает команды этого игрока
+        4. обрабатывает их
+        5. рассылает личные или широковещательные сообщения
     '''
     username = None
 
     try:
+        # первое сообщение от клиента - имя пользователя
         data = await reader.readline()
         if not data:
             writer.close()
             await writer.wait_closed()
             return
         
+        # имя должно быть непустым, без пробелов и уникальным
         username = data.decode().strip()
 
         if (not username) or (" " in username):
@@ -205,17 +210,19 @@ async def MUD(reader, writer):
             return
         
         if username in clients:
-            await send_to_one(writer, f"Usename {username} is already taken. Enter different username")
+            await send_to_one(writer, f"Username {username} is already taken")
             writer.close()
             await writer.wait_closed()
             return
         
+        # регистрируем подключение, создаём игрока
         clients[username] = writer
         game.add_player(username)
 
         await send_to_one(writer, f"Welcome, {username}")
         await send_to_everyone(f"{username} joined the MUD")
 
+        # дальше клиент присылает игровые команды
         while (data := await reader.readline()):
             cmd = data.decode().strip()
 
@@ -264,6 +271,7 @@ async def MUD(reader, writer):
                 case "error":
                     await send_to_one(writer, res["message"])
 
+    # при любом завершении соединения удаляем игрока и рассылаем сообщение о выходе
     finally:
         if (username is not None) and (username in clients):
             clients.pop(username, None)
@@ -272,17 +280,6 @@ async def MUD(reader, writer):
 
         writer.close()
         await writer.wait_closed()
-
-    # while data := await reader.readline():
-    #     cmd = data.decode().strip()
-    #     res = game.process_command(cmd)
-
-    #     response = json.dumps(res) + "\n"
-    #     writer.write(response.encode())
-    #     await writer.drain()
-
-    # writer.close()
-    # await writer.wait_closed()
 
 # локальный сервер на 1337 порту
 # клиенту нужно подключаться к 127.0.0.1:1337
