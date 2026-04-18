@@ -1,25 +1,11 @@
-import cmd, shlex, cowsay, socket, json
-from io import StringIO
+import cmd, shlex, socket, sys, threading
 from server import weapons, get_monsters
 
-jgsbat = cowsay.read_dot_cow(StringIO(r"""
-$the_cow = <<EOC;
- ,_                    _,
- ) '-._  ,_    _,  _.-' (
- )  _.-'.|\\--//|.'-._  (
-  )'   .'\/o\/o\/'.   `(
-   ) .' . \====/ . '. (
-    )  / <<    >> \  (
-     '-._/``  ``\_.-'
-jgs     __\\'--'//__
-       (((""`  `"")))
-EOC
-"""))
 
 class cmd_MUD(cmd.Cmd):
     prompt = '>>> '
 
-    def __init__(self):
+    def __init__(self, username):
         cmd.Cmd.__init__(self)
 
         # в клиенте больше не хранится состояние игры; он просто подключается к серверу, и происходит обмен командами
@@ -29,9 +15,13 @@ class cmd_MUD(cmd.Cmd):
             2. отправляет серверу
             3. получает ответ и печатает
         '''
+        self.username = username
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect(("127.0.0.1", 1337))
-        self.socket_file = self.sock.makefile("r")
+        # self.socket_file = self.sock.makefile("r")
+
+        self.alive = True           # 
+        self.sock.sendall((self.username + "\n").encode())
     
     # весь вывод
     def print_res(self, res):

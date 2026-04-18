@@ -1,4 +1,4 @@
-import cowsay, shlex, asyncio, json
+import cowsay, shlex, asyncio
 from io import StringIO
 
 jgsbat = cowsay.read_dot_cow(StringIO(r"""
@@ -43,7 +43,7 @@ class GameParam():
         return True
     
     # удаление игрока
-    def remove_players(self, username):
+    def remove_player(self, username):
         self.players.pop(username, None)
     
     # получение координат игрока
@@ -89,7 +89,7 @@ class GameParam():
     # атака на монстра в данной клетке
     def attack(self, username, damage, monster_name=None):
         x, y = self.get_pos(username)
-        monster = self.monsters.get(x, y)
+        monster = self.monsters.get((x, y))
 
         # если монстра нет -> говорим клиенту, что его нет
         if monster is None:
@@ -175,7 +175,7 @@ async def send_to_everyone(message):
     # удаляем мертвых пользователей
     for username in dead_clients:
         clients.pop(username, None)
-        game.remove_players(username)
+        game.remove_player(username)
 
 # обработка подключения клиента
 async def MUD(reader, writer):
@@ -199,7 +199,7 @@ async def MUD(reader, writer):
         username = data.decode().strip()
 
         if (not username) or (" " in username):
-            await send_to_one(writer, "Invalid usename")
+            await send_to_one(writer, "Invalid username")
             writer.close()
             await writer.wait_closed()
             return
@@ -234,19 +234,20 @@ async def MUD(reader, writer):
                             hello = cowsay.cowsay(encounter["hello"], cowfile=jgsbat)
                         else:
                             hello = cowsay.cowsay(encounter["hello"], cow=encounter["name"])
-                            await send_to_one(writer, hello)
+
+                        await send_to_one(writer, hello)
 
                 case "addmon":
-                    mess = (f"{username} added monster{res['name']}"
+                    mess = (f"{username} added monster {res['name']} "
                             f"to ({res['x']}, {res['y']}) with {res['hp']} hp")
                     await send_to_everyone(mess)
 
                     if res["replaced"]:
-                        await send_to_everyone("Replaced old monster")
+                        await send_to_everyone("Replaced the old monster")
 
                 case "no_monster":
                     if res["name"] is None:
-                        await send_to_one(writer, "No monster")
+                        await send_to_one(writer, "No monster here")
                     else:
                         await send_to_one(writer, f"No {res['name']} here")
 
@@ -256,7 +257,7 @@ async def MUD(reader, writer):
                                 f"{res['name']} died")
                     else:
                         mess = (f"{username} attacked {res['name']}, damage {res['damage']} hp, "
-                                f"{res['name']} now has {res['damage']} hp")
+                                f"{res['name']} now has {res['hp_left']} hp")
                     
                     await send_to_everyone(mess)
 
@@ -266,7 +267,7 @@ async def MUD(reader, writer):
     finally:
         if (username is not None) and (username in clients):
             clients.pop(username, None)
-            game.remove_players(username)
+            game.remove_player(username)
             await send_to_everyone(f"{username} left the MUD")
 
         writer.close()
