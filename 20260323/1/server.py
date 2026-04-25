@@ -15,6 +15,8 @@ jgs     __\\'--'//__
 EOC
 """))
 
+MSG_DELIM = "\0"
+
 # словарь с оружием для нанесения урона монстру
 weapons = {"sword": 10, "spear": 15, "axe": 20}
 
@@ -59,9 +61,13 @@ class GameParam():
             return
         
         # если монстр есть -> печать приветствия
-        return { "name": monster["name"], "hello": monster["hello"] }
+        return {
+                "name": monster["name"],
+                "hello": monster["hello"]
+        }
 
     # перемещения
+    # перемещаем игрока по полю с учётом циклического выхода за границы
     def move(self, username, dx, dy):
         player = self.players[username]
 
@@ -69,7 +75,7 @@ class GameParam():
         player["x"] = self.wrap(player["x"] + dx)
         player["y"] = self.wrap(player["y"] + dy)
 
-        # отправка инф. о перемещении клиенту
+        # отправка инфs о перемещении клиенту
         x, y = player["x"], player["y"]
         return x, y, self.encounter(x, y)
 
@@ -84,62 +90,114 @@ class GameParam():
         self.monsters[(x, y)] = {"name": name, "hello": hello, "hp": hp}
 
         # отправка инф. о том, какой монстр теперь в этой клетке
-        return { "status": "addmon", "name": name, "hello": hello, "hp": hp, "x": x, "y": y, "replaced": replaced }
+        return {
+            "status": "addmon",
+            "name": name,
+            "hello": hello,
+            "hp": hp,
+            "x": x,
+            "y": y,
+            "replaced": replaced
+        }
 
-    # атака на монстра в данной клетке
-    def attack(self, username, damage, monster_name=None):
+    # атакуем монстра в текущей клетке игрока
+    # если monster_name задан -> проверяем, что имя существует
+    def attack(self, username, weapon, monster_name=None):
+        if weapon not in weapons:
+            return {
+                "status": "error",
+                "message": "Unknown weapon"
+            }
+
         x, y = self.get_pos(username)
         monster = self.monsters.get((x, y))
 
-        # если монстра нет -> говорим клиенту, что его нет
+        # в клеточке нет монстра
         if monster is None:
-            return { "status": "no_monster", "name": monster_name }
-        
-        # если клиент ввёл имя монстра, которого нет в этой клетке -> говорим, что такого монстра здесь нет
+            return {
+                "status": "no_monster",
+                "name": monster_name
+            }
+
+        # в клеточке есть монстр, но не тот, которого написал пользователь
         if monster_name is not None and monster["name"] != monster_name:
-            return { "status": "no_monster", "name": monster_name }
-        
-        # вычисление и нанос урона
+            return {
+                "status": "no_monster",
+                "name": monster_name
+            }
+
+        damage = weapons[weapon]
         final_damage = min(damage, monster["hp"])
         monster["hp"] -= final_damage
 
-        died = (monster["hp"] == 0)
+        died = monster["hp"] == 0
         name = monster["name"]
 
-        # смерть монстра
+        # если hp закончились -> убираем монстра из клетки
         if died:
             del self.monsters[(x, y)]
 
-        # сообщаем клиенту, какой монстр с каким кол-вом hp остался в клетке
-        return { "status": "attack", "name": name, "damage": final_damage,
-                 "hp_left": 0 if died else monster['hp'], "died": died }
-    
-    # разбор командной строки, выполнение нужной команды
+        return {
+            "status": "attack",
+            "name": name,
+            "weapon": weapon,
+            "damage": final_damage,
+            "hp_left": 0 if died else monster["hp"],
+            "died": died,
+        }
+
+    # разбираем одну команду клиента и возвращаем результат в виде словаря
     def process_command(self, username, line):
-        cmd = shlex.split(line)
+        if username not in self.players:
+            return {
+                "status": "error",
+                "message": "Player is not connected"
+            }
 
-        match cmd[0]:
-            case "move":
-                dx = int(cmd[1])
-                dy = int(cmd[2])
-                return {"status": "move", "data": self.move(username, dx, dy)}
+        try:
+            cmd = shlex.split(line)
+        except ValueError:
+            return {
+                "status": "error",
+                "message": "Invalid arguments"
+            }
 
-            case "addmon":
-                name = cmd[1]
-                hello = cmd[2]
-                hp = int(cmd[3])
-                x = int(cmd[4])
-                y = int(cmd[5])
-                return self.addmon(name, hello, hp, x, y)
+        if not cmd:
+            return {"status": "error", "message": "Invalid command"}
 
-            case "attack":
-                if len(cmd) == 2:
-                    damage = int(cmd[1])
-                    return self.attack(username, damage)
-                else:
-                    monster_name = cmd[1]
-                    damage = int(cmd[2])
-                    return self.attack(username, damage, monster_name)
+        try:
+            match cmd[0]:
+                case "move":
+                    if len(cmd) != 3:
+                        return {"status": "error", "message": "Invalid arguments"}
+                    dx = int(cmd[1])
+                    dy = int(cmd[2])
+                    return {"status": "move", "data": self.move(username, dx, dy)}
+
+                case "addmon":
+                    if len(cmd) != 6:
+                        return {"status": "error", "message": "Invalid arguments"}
+                    name = cmd[1]
+                    hello = cmd[2]
+                    hp = int(cmd[3])
+                    x = int(cmd[4])
+                    y = int(cmd[5])
+                    return self.addmon(name, hello, hp, x, y)
+
+                case "attack":
+                    if len(cmd) == 2:
+                        weapon = cmd[1]
+                        return self.attack(username, weapon)
+                    if len(cmd) == 3:
+                        monster_name = cmd[1]
+                        weapon = cmd[2]
+                        return self.attack(username, weapon, monster_name)
+                    return {"status": "error", "message": "Invalid arguments"}
+
+                case _:
+                    return {"status": "error", "message": "Invalid command"}
+        except ValueError:
+            return {"status": "error", "message": "Invalid arguments"}
 
 
 ''' ----- main ----- '''
@@ -149,35 +207,49 @@ game = GameParam()
 clients = {}                # {username: writer} - подключенные пользователи
 
 # сообщение одному пользователю
+# в конец добавляем MSG_DELIM, чтобы клиент понял границу сообщения
 async def send_to_one(writer, message):
-    writer.write((message + "\n").encode())
+    writer.write((message + MSG_DELIM).encode())
 
     # ждем, пока данные из буфера уйдут в сокет
     await writer.drain()            # await - приостановка
 
 # сообщение всем пользователям (широковещательное сообщение)
-async def send_to_everyone(message):
-    dead_clients = []                   # имена пользователей, которые по какой-то причине отключились
+# except_username - чтобы не отправлять сообщение самому себе
+async def send_to_everyone(message, except_username=None):
+    dead_clients = []                           # имена пользователей, которые по какой-то причине отключились
+    current_clients = list(clients.items())
 
     # кидаем сообщение всем подключенным пользователям
-    for username, writer in clients.items():
+    for username, writer in current_clients:
+        if username == except_username:
+            continue
+
         try:
-            writer.write((message + "\n").encode())             # байт-строка отправляется в сокет
+            writer.write((message + MSG_DELIM).encode())        # байт-строка отправляется в сокет
         except Exception:
             dead_clients.append(username)
     
-    # доотправка сообщений
-    for username, writer in clients.items():
-        if username not in dead_clients:                        # проверка на случай, если уже решили, что нужно удалить пользователя
-            try:
-                await writer.drain()
-            except Exception:
-                dead_clients.append(username)
+    # ожидаем доотправки сообщений
+    for username, writer in current_clients:
+        if username == except_username or username in dead_clients:
+            continue
+
+        try:
+            await writer.drain()
+        except Exception:
+            dead_clients.append(username)
     
     # удаляем мертвых пользователей
     for username in dead_clients:
         clients.pop(username, None)
-        game.remove_player(username)
+
+# формируем многострочное приветствие монстра в формате cowsay
+# для jgsbat используем специальный cowfile
+def make_cowsay_message(encounter):
+    if encounter["name"] == "jgsbat":
+        return cowsay.cowsay(encounter["hello"], cowfile=jgsbat)
+    return cowsay.cowsay(encounter["hello"], cow=encounter["name"])
 
 # обработка подключения клиента
 async def MUD(reader, writer):
@@ -189,6 +261,7 @@ async def MUD(reader, writer):
         3. читает команды этого игрока
         4. обрабатывает их
         5. рассылает личные или широковещательные сообщения
+        6. при отключении удаляет игрока и сообщает остальным о его уходе
     '''
     username = None
 
@@ -220,7 +293,7 @@ async def MUD(reader, writer):
         game.add_player(username)
 
         await send_to_one(writer, f"Welcome, {username}")
-        await send_to_everyone(f"{username} joined the MUD")
+        await send_to_everyone(f"{username} joined the MUD", except_username=username)
 
         # дальше клиент присылает игровые команды
         while (data := await reader.readline()):
@@ -235,22 +308,17 @@ async def MUD(reader, writer):
                 case "move":
                     x, y, encounter = res["data"]
                     await send_to_one(writer, f"Moved to ({x}, {y})")
-
                     if encounter is not None:
-                        if encounter["name"] == "jgsbat":
-                            hello = cowsay.cowsay(encounter["hello"], cowfile=jgsbat)
-                        else:
-                            hello = cowsay.cowsay(encounter["hello"], cow=encounter["name"])
-
-                        await send_to_one(writer, hello)
+                        await send_to_one(writer, make_cowsay_message(encounter))
 
                 case "addmon":
-                    mess = (f"{username} added monster {res['name']} "
-                            f"to ({res['x']}, {res['y']}) with {res['hp']} hp")
-                    await send_to_everyone(mess)
-
+                    message = (
+                        f"{username} added monster {res['name']} "
+                        f"to ({res['x']}, {res['y']}) with {res['hp']} hp"
+                    )
                     if res["replaced"]:
-                        await send_to_everyone("Replaced the old monster")
+                        message += "\nReplaced the old monster"
+                    await send_to_everyone(message)
 
                 case "no_monster":
                     if res["name"] is None:
@@ -260,28 +328,38 @@ async def MUD(reader, writer):
 
                 case "attack":
                     if res["died"]:
-                        mess = (f"{username} attacked {res['name']}, damage {res['damage']} hp, "
-                                f"{res['name']} died")
+                        message = (
+                            f"{username} attacked {res['name']} with {res['weapon']}, "
+                            f"damage {res['damage']} hp, {res['name']} died"
+                        )
                     else:
-                        mess = (f"{username} attacked {res['name']}, damage {res['damage']} hp, "
-                                f"{res['name']} now has {res['hp_left']} hp")
-                    
-                    await send_to_everyone(mess)
+                        message = (
+                            f"{username} attacked {res['name']} with {res['weapon']}, "
+                            f"damage {res['damage']} hp, {res['name']} now has {res['hp_left']} hp"
+                        )
+                    await send_to_everyone(message)
 
                 case "error":
                     await send_to_one(writer, res["message"])
-
+    
     # при любом завершении соединения удаляем игрока и рассылаем сообщение о выходе
     finally:
-        if (username is not None) and (username in clients):
+        was_connected = (username is not None) and (username in clients)
+
+        if username is not None:
             clients.pop(username, None)
             game.remove_player(username)
-            await send_to_everyone(f"{username} left the MUD")
 
-        writer.close()
-        await writer.wait_closed()
+            if was_connected:
+                await send_to_everyone(f"{username} left the MUD", except_username=username)
 
-# локальный сервер на 1337 порту
+        try:
+            writer.close()
+            await writer.wait_closed()
+        except Exception:
+            pass
+
+# запускаем локальный сервер на 1337 порту
 # клиенту нужно подключаться к 127.0.0.1:1337
 async def main():
     server = await asyncio.start_server(MUD, "127.0.0.1", 1337)
