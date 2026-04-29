@@ -1,4 +1,9 @@
-import cmd, shlex, socket, sys, threading, readline
+import cmd
+import shlex
+import socket
+import sys
+import threading
+import readline
 import cowsay
 
 HOST = "127.0.0.1"
@@ -10,6 +15,7 @@ weapons = {"sword": 10, "spear": 15, "axe": 20}
 def get_monsters():
     return cowsay.list_cows() + ["jgsbat"]
 
+
 class cmd_MUD(cmd.Cmd):
     prompt = ">>> "
 
@@ -18,12 +24,12 @@ class cmd_MUD(cmd.Cmd):
         - читает команды, отправляет их серверу
         - отдельно получает асинхронные сообщения
     '''
-    
+
     def __init__(self, username):
         super().__init__()
         self.username = username
         self.alive = True
-        self.recv_buffer = ""           # буфер для частично полученных сообщений 
+        self.recv_buffer = ""           # буфер для частично полученных сообщений
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.sock.connect((HOST, PORT))
@@ -65,7 +71,7 @@ class cmd_MUD(cmd.Cmd):
             self.sock.close()
         except OSError:
             pass
-    
+
     # отправка одной команды серверу
     def send_line(self, line):
         if not self.alive:
@@ -122,7 +128,7 @@ class cmd_MUD(cmd.Cmd):
             self.print_async_message(message)
 
         self.alive = False
-    
+
     # если есть аргументы у движения - ошибка
 
     # up -> (0, -1)
@@ -131,14 +137,14 @@ class cmd_MUD(cmd.Cmd):
             print("Invalid arguments")
             return
         self.send_line("move 0 -1")
-    
+
     # down -> (0, 1)
     def do_down(self, arg):
         if arg:
             print("Invalid arguments")
             return
         self.send_line("move 0 1")
-    
+
     # left -> (-1, 0)
     def do_left(self, arg):
         if arg:
@@ -177,27 +183,27 @@ class cmd_MUD(cmd.Cmd):
             match line_split[i]:
                 # ----- hello -----
                 case "hello":
-                    if (i+1) >= len(line_split):
+                    if (i + 1) >= len(line_split):
                         print("Invalid arguments")
                         flag = True
                         break
-                    hello = line_split[i+1]
+                    hello = line_split[i + 1]
                     i += 2
 
                 # ----- hp -----
                 case "hp":
-                    if (i+1) >= len(line_split):
+                    if (i + 1) >= len(line_split):
                         print("Invalid arguments")
                         flag = True
                         break
 
                     try:
-                        hp = int(line_split[i+1])
+                        hp = int(line_split[i + 1])
                     except ValueError:
                         print("Invalid arguments")
                         flag = True
                         break
-                    
+
                     if hp <= 0:
                         print("Invalid arguments")
                         flag = True
@@ -207,14 +213,14 @@ class cmd_MUD(cmd.Cmd):
                 # ----- coords -----
                 # координаты клетки, в которую ставим монстра
                 case "coords":
-                    if (i+2) >= len(line_split):
+                    if (i + 2) >= len(line_split):
                         print("Invalid arguments")
                         flag = True
                         break
 
                     try:
-                        x = int(line_split[i+1])
-                        y = int(line_split[i+2])
+                        x = int(line_split[i + 1])
+                        y = int(line_split[i + 2])
                     except ValueError:
                         print("Invalid arguments")
                         flag = True
@@ -240,7 +246,7 @@ class cmd_MUD(cmd.Cmd):
         # quote - чтобы с пробелами нормально обработалось
         request = f"addmon {shlex.quote(name)} {shlex.quote(hello)} {hp} {x} {y}"
         self.send_line(request)
-    
+
     # поддерживаются команды:
     # attack
     # attack <monster_name>
@@ -266,7 +272,7 @@ class cmd_MUD(cmd.Cmd):
                 print("Invalid arguments")
                 return
             monster_name = line_split[0]
-        
+
         # attack with <weapon>
         elif len(line_split) == 2 and line_split[0] == "with":
             weapon = line_split[1]
@@ -276,7 +282,6 @@ class cmd_MUD(cmd.Cmd):
             monster_name = line_split[0]
             weapon = line_split[2]
 
-        
         else:
             print("Invalid arguments")
             return

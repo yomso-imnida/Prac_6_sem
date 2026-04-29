@@ -1,4 +1,6 @@
-import cowsay, shlex, asyncio
+import cowsay
+import shlex
+import asyncio
 from io import StringIO
 
 jgsbat = cowsay.read_dot_cow(StringIO(r"""
@@ -31,39 +33,39 @@ class GameParam():
         self.size = 10          # поле 10x10
         self.monsters = {}      # словарь {"name": ..., "hello": ..., "hp": ...}; ключ - (x, y)
         self.players = {}       # {username: {"x": ..., "y": ...}}  -  координаты каждого пользователя
-    
+
     # перенос на другой край поля (если произошёл выход за границы)
     def wrap(self, coordinate):
         return coordinate % self.size
-    
+
     # добавление нового игрока
     def add_player(self, username):
         if username in self.players:
             return False
-        
+
         self.players[username] = {"x": 0, "y": 0}
         return True
-    
+
     # удаление игрока
     def remove_player(self, username):
         self.players.pop(username, None)
-    
+
     # получение координат игрока
     def get_pos(self, username):
         player = self.players[username]
         return player["x"], player["y"]
-    
+
     # попадание игрока в клетку с монстром
     def encounter(self, x, y):
         monster = self.monsters.get((x, y))
 
         if monster is None:
             return
-        
+
         # если монстр есть -> печать приветствия
         return {
-                "name": monster["name"],
-                "hello": monster["hello"]
+            "name": monster["name"],
+            "hello": monster["hello"]
         }
 
     # перемещения
@@ -83,7 +85,7 @@ class GameParam():
     def addmon(self, name, hello, hp, x, y):
         # может ли быть такой монстр в игре
         if name not in get_monsters():
-            return { "status": "error", "message": "Cannot add unknown monster" }
+            return {"status": "error", "message": "Cannot add unknown monster"}
 
         # перезапись монстра в клетке
         replaced = (x, y) in self.monsters
@@ -206,17 +208,23 @@ class GameParam():
 game = GameParam()
 clients = {}                # {username: writer} - подключенные пользователи
 
-# сообщение одному пользователю
-# в конец добавляем MSG_DELIM, чтобы клиент понял границу сообщения
+
 async def send_to_one(writer, message):
+    """
+    сообщение одному пользователю
+    в конец добавляем MSG_DELIM, чтобы клиент понял границу сообщения
+    """
     writer.write((message + MSG_DELIM).encode())
 
     # ждем, пока данные из буфера уйдут в сокет
     await writer.drain()            # await - приостановка
 
-# сообщение всем пользователям (широковещательное сообщение)
-# except_username - чтобы не отправлять сообщение самому себе
+
 async def send_to_everyone(message, except_username=None):
+    """
+    сообщение всем пользователям (широковещательное сообщение)
+    except_username - чтобы не отправлять сообщение самому себе
+    """
     dead_clients = []                           # имена пользователей, которые по какой-то причине отключились
     current_clients = list(clients.items())
 
@@ -229,7 +237,7 @@ async def send_to_everyone(message, except_username=None):
             writer.write((message + MSG_DELIM).encode())        # байт-строка отправляется в сокет
         except Exception:
             dead_clients.append(username)
-    
+
     # ожидаем доотправки сообщений
     for username, writer in current_clients:
         if username == except_username or username in dead_clients:
@@ -239,21 +247,25 @@ async def send_to_everyone(message, except_username=None):
             await writer.drain()
         except Exception:
             dead_clients.append(username)
-    
+
     # удаляем мертвых пользователей
     for username in dead_clients:
         clients.pop(username, None)
 
-# формируем многострочное приветствие монстра в формате cowsay
-# для jgsbat используем специальный cowfile
+
 def make_cowsay_message(encounter):
+    """
+    формируем многострочное приветствие монстра в формате cowsay
+    для jgsbat используем специальный cowfile
+    """
     if encounter["name"] == "jgsbat":
         return cowsay.cowsay(encounter["hello"], cowfile=jgsbat)
     return cowsay.cowsay(encounter["hello"], cow=encounter["name"])
 
-# обработка подключения клиента
+
 async def MUD(reader, writer):
     '''
+    Oбработка подключения клиента
     Клиент: сначала присылает имя пользователя, затем строки с командами
     Сервер:
         1. читает имя и проверяет, свободно ли оно
@@ -272,7 +284,7 @@ async def MUD(reader, writer):
             writer.close()
             await writer.wait_closed()
             return
-        
+
         # имя должно быть непустым, без пробелов и уникальным
         username = data.decode().strip()
 
@@ -281,13 +293,13 @@ async def MUD(reader, writer):
             writer.close()
             await writer.wait_closed()
             return
-        
+
         if username in clients:
             await send_to_one(writer, f"Username {username} is already taken")
             writer.close()
             await writer.wait_closed()
             return
-        
+
         # регистрируем подключение, создаём игрока
         clients[username] = writer
         game.add_player(username)
@@ -341,7 +353,7 @@ async def MUD(reader, writer):
 
                 case "error":
                     await send_to_one(writer, res["message"])
-    
+
     # при любом завершении соединения удаляем игрока и рассылаем сообщение о выходе
     finally:
         was_connected = (username is not None) and (username in clients)
@@ -359,9 +371,12 @@ async def MUD(reader, writer):
         except Exception:
             pass
 
-# запускаем локальный сервер на 1337 порту
-# клиенту нужно подключаться к 127.0.0.1:1337
+
 async def main():
+    """
+    запускаем локальный сервер на 1337 порту
+    клиенту нужно подключаться к 127.0.0.1:1337
+    """
     server = await asyncio.start_server(MUD, "127.0.0.1", 1337)
     async with server:
         await server.serve_forever()
