@@ -196,6 +196,11 @@ class GameParam():
                         return self.attack(username, weapon, monster_name)
                     return {"status": "error", "message": "Invalid arguments"}
 
+                case "sayall":
+                    if len(cmd) != 2:
+                        return {"status": "error", "message": "Invalid arguments"}
+                    return {"status": "sayall", "message": cmd[1]}
+
                 case _:
                     return {"status": "error", "message": "Invalid command"}
         except ValueError:
@@ -350,6 +355,9 @@ async def MUD(reader, writer):
                             f"damage {res['damage']} hp, {res['name']} now has {res['hp_left']} hp"
                         )
                     await send_to_everyone(message)
+
+                case "sayall":
+                    await send_to_everyone(f"{username}: {res['message']}")
 
                 case "error":
                     await send_to_one(writer, res["message"])

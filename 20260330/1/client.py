@@ -299,6 +299,26 @@ class cmd_MUD(cmd.Cmd):
 
         self.send_line(request)
 
+    def do_sayall(self, arg):
+        """
+        Отправка сообщения всем игрокам
+        Cообщение должно быть одним словом или одной строкой в кавычках
+        """
+        try:
+            # sayall <слово>
+            # sayall "<выражение  пробелами>"
+            line_split = shlex.split(arg)
+        except ValueError:
+            print("Invalid arguments")
+            return
+
+        if len(line_split) != 1:
+            print("Invalid arguments")
+            return
+
+        message = line_split[0]
+        self.send_line(f"sayall {shlex.quote(message)}")
+
     # автодополнение для attack
     def complete_attack(self, text, line, i_begin, i_end):          # text - имя монстра, которое уже начали вводить
         # смотрим, какая команда введена (до text)
