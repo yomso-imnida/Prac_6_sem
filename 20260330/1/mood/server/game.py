@@ -1,4 +1,4 @@
-""" Game state and command processing for MUD-server """
+"""Обработка состояния игры и команд для MUD-сервера"""
 
 import cowsay
 import shlex
@@ -21,35 +21,34 @@ jgs     __\\'--'//__
 EOC
 """))
 
+
 def get_monsters():
-    """ список допустимых в игре монстров """
+    """список допустимых в игре монстров"""
     return cowsay.list_cows() + ["jgsbat"]
 
+
 def make_cowsay_message(encounter):
-    """
-    формируем многострочное приветствие монстра в формате cowsay
-    для jgsbat используем специальный cowfile
-    """
+    """формирование многострочного приветствие монстра в формате cowsay (для jgsbat используется специальный cowfile)"""
     if encounter["name"] == "jgsbat":
         return cowsay.cowsay(encounter["hello"], cowfile=JGSBAT)
     return cowsay.cowsay(encounter["hello"], cow=encounter["name"])
 
 
 class GameParam():
-    """ состояния игрового поля, игроков, монстров """
+    """состояния игрового поля, игроков, монстров"""
 
     def __init__(self):
-        """ создание начального, пустого состояния игры """
+        """создание начального, пустого состояния игры"""
         self.size = 10          # поле 10x10
         self.monsters = {}      # словарь {"name": ..., "hello": ..., "hp": ...}; ключ - (x, y)
         self.players = {}       # {username: {"x": ..., "y": ...}}  -  координаты каждого пользователя
 
     def wrap(self, coordinate):
-        """ если произошёл выход за границы -> перенос на другой край поля """
+        """если произошёл выход за границы -> перенос на другой край поля"""
         return coordinate % self.size
 
     def add_player(self, username):
-        """ добавление нового игрока """
+        """добавление нового игрока"""
         if username in self.players:
             return False
 
@@ -57,16 +56,16 @@ class GameParam():
         return True
 
     def remove_player(self, username):
-        """ удаление игрока """
+        """удаление игрока"""
         self.players.pop(username, None)
 
     def get_pos(self, username):
-        """ получение координат игрока """
+        """получение координат игрока"""
         player = self.players[username]
         return player["x"], player["y"]
 
     def encounter(self, x, y):
-        """ если в клетке есть монстр -> получение данных о монстре """
+        """если в клетке есть монстр -> получение данных о монстре"""
         monster = self.monsters.get((x, y))
 
         if monster is None:
@@ -79,7 +78,7 @@ class GameParam():
         }
 
     def move(self, username, dx, dy):
-        """ перемещение игрока по полю с учётом циклического выхода за границы """
+        """перемещение игрока по полю с учётом циклического выхода за границы"""
         player = self.players[username]
 
         # серверная команда движения
@@ -91,8 +90,7 @@ class GameParam():
         return x, y, self.encounter(x, y)
 
     def addmon(self, name, hello, hp, x, y):
-        """ добавление или перезапись монстра """
-
+        """добавление или перезапись монстра"""
         # может ли быть такой монстр в игре
         if name not in get_monsters():
             return {
@@ -116,7 +114,7 @@ class GameParam():
         }
 
     def attack(self, username, weapon, monster_name=None):
-        """ атака монстра в текущей клетке игрока. если имя монстра задано -> проверяем, что имя существует """
+        """атака монстра в текущей клетке игрока. если имя монстра задано -> проверяем, что имя существует"""
         if weapon not in WEAPONS:
             return {
                 "status": "error",
@@ -161,7 +159,7 @@ class GameParam():
         }
 
     def process_command(self, username, line):
-        """ разбор и выполнение одной команды клиента """
+        """разбор и выполнение одной команды клиента"""
         if username not in self.players:
             return {
                 "status": "error",
