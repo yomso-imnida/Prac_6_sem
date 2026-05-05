@@ -1,11 +1,12 @@
 """Обработка состояния игры и команд для MUD-сервера"""
 
+import random
 import cowsay
 import shlex
 from io import StringIO
 
 # словарь с оружием для нанесения урона монстру
-from mood.common.constants import WEAPONS
+from mood.common.constants import WEAPONS, FIELD_SIZE, DIRECTIONS
 
 JGSBAT = cowsay.read_dot_cow(StringIO(r"""
 $the_cow = <<EOC;
@@ -39,9 +40,9 @@ class GameParam():
 
     def __init__(self):
         """создание начального, пустого состояния игры"""
-        self.size = 10          # поле 10x10
-        self.monsters = {}      # словарь {"name": ..., "hello": ..., "hp": ...}; ключ - (x, y)
-        self.players = {}       # {username: {"x": ..., "y": ...}}  -  координаты каждого пользователя
+        self.size = FIELD_SIZE      # поле 10x10
+        self.monsters = {}          # словарь {"name": ..., "hello": ..., "hp": ...}; ключ - (x, y)
+        self.players = {}           # {username: {"x": ..., "y": ...}}  -  координаты каждого пользователя
 
     def wrap(self, coordinate):
         """если произошёл выход за границы -> перенос на другой край поля"""
@@ -76,6 +77,45 @@ class GameParam():
             "name": monster["name"],
             "hello": monster["hello"]
         }
+    
+    def players_at(self, x, y):
+        """получение имен всех игроков, которые находятся в этой клеточке"""
+        return [ username for username, player in self.players.items()
+                 if player["x"] == x and player["y"] == y ]
+
+    def move_random_monster(self):
+        """перемещение случайного монстра на одну клетку в случайном направлении"""
+        # если монстров нет
+        if not self.monsters:
+            return None
+
+        while True:
+            # выбор случайного монстра
+            old_pos, monster = random.choice(list(self.monsters.items()))
+            # выбор случайного направления
+            direction, delta = random.choice(list(DIRECTIONS.items()))
+
+            old_x, old_y = old_pos
+            dx, dy = delta
+            new_pos = (self.wrap(old_x + dx), self.wrap(old_y + dy))
+
+            # если клетка занята -> монстр и направление выбираются заново
+            if new_pos in self.monsters:
+                continue
+
+            self.monsters[new_pos] = monster
+            del self.monsters[old_pos]
+
+            x, y = new_pos
+
+            return {
+                "name": monster["name"],
+                "direction": direction,
+                "x": x,
+                "y": y,
+                "encounter": self.encounter(x, y),
+                "players": self.players_at(x, y),               # если есть игроки на клетке - тоже сообщаем об этом
+            }
 
     def move(self, username, dx, dy):
         """перемещение игрока по полю с учётом циклического выхода за границы"""
