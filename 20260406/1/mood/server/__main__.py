@@ -2,7 +2,7 @@
 
 import asyncio
 
-from mood.common.constants import HOST, MSG_DELIM, PORT
+from mood.common.constants import HOST, MSG_DELIM, PORT, MONSTER_MOVE_INTERVAL
 from mood.server.game import GameParam, make_cowsay_message
 
 
@@ -48,6 +48,44 @@ async def send_to_everyone(message, except_username=None):
     # удаляем мертвых пользователей
     for username in dead_clients:
         clients.pop(username, None)
+
+
+async def send_encounter(username, encounter):
+    """отправка сообщения о встрече с монстром (одному из игроков)"""
+    writer = clients.get(username)
+
+    if writer is None:
+        return
+
+    await send_to_one(writer, make_cowsay_message(encounter))
+
+
+async def move_monsters_periodically():
+    """перемещение одного случайного монстра через фикс. промежуток времени"""
+    while True:
+        # первый ход происходит только после ожидания
+        await asyncio.sleep(MONSTER_MOVE_INTERVAL)
+
+        # выбираем случайного монстра и пробуем переместить его
+        result = game.move_random_monster()
+
+        # если монстров нет -> ждём следующего интервала
+        if result is None:
+            continue
+
+        message = ( f"{result['name']} moved one cell "
+                    f"{result['direction']}" )
+        await send_to_everyone(message)
+
+        # если монстр пришёл на клетку с игроками -> показываем им encounter
+        encounter = result["encounter"]
+
+        if encounter is None:
+            continue
+
+        # encounter отправляется только тем игрокам, которые стоят на новой клетке монстра
+        for username in result["players"]:
+            await send_encounter(username, encounter)
 
 
 async def client_processing(reader, writer):
@@ -166,6 +204,8 @@ async def client_processing(reader, writer):
 async def main():
     """запуск MUD-сервер"""
     server = await asyncio.start_server(client_processing, HOST, PORT)
+    asyncio.create_task(move_monsters_periodically())
+
     async with server:
         await server.serve_forever()
 
