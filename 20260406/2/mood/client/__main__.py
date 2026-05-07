@@ -1,4 +1,4 @@
-"""Запуск клиентского MUD-а"""
+"""Запуск клиентского MUD-а."""
 
 import cmd
 import shlex
@@ -6,13 +6,15 @@ import socket
 import sys
 import threading
 import readline
+import argparse
+import time
 
-from mood.common.constants import HOST, MSG_DELIM, PORT, WEAPONS
+from mood.common.constants import HOST, MSG_DELIM, PORT, WEAPONS, SCRIPT_COMMAND_DELAY
 from mood.server.game import get_monsters
 
 
 class CmdMUD(cmd.Cmd):
-    """CMD (командная строка) для клиента"""
+    """CMD (командная строка) для клиента."""
 
     prompt = ">>> "
 
@@ -22,9 +24,9 @@ class CmdMUD(cmd.Cmd):
         - отдельно получает асинхронные сообщения
     '''
 
-    def __init__(self, username):
-        """подключение клиента к серверу, запуск потока для связи с сервером"""
-        super().__init__()
+    def __init__(self, username, stdin=None):
+        """Подключение клиента к серверу, запуск потока для связи с сервером."""
+        super().__init__(stdin=stdin)
         self.username = username
         self.alive = True
         self.recv_buffer = ""           # буфер для частично полученных сообщений
@@ -54,7 +56,7 @@ class CmdMUD(cmd.Cmd):
         self.receiver.start()
 
     def close_connection(self):
-        """завершение соединения с сервером"""
+        """Завершение соединения с сервером."""
         if not self.alive:
             return
 
@@ -71,7 +73,7 @@ class CmdMUD(cmd.Cmd):
             pass
 
     def send_line(self, line):
-        """отправка одной команды на сервер"""
+        """Отправка одной команды на сервер."""
         if not self.alive:
             print("Connection lost")
             return
@@ -83,7 +85,7 @@ class CmdMUD(cmd.Cmd):
             print("Connection lost")
 
     def read_message(self):
-        """чтение сокета, пока не соберётся одно полное сообщение"""
+        """Чтение сокета, пока не соберётся одно полное сообщение."""
         while True:
             # сервер разделяет сообщения символом MSG_DELIM
             if MSG_DELIM in self.recv_buffer:
@@ -101,7 +103,7 @@ class CmdMUD(cmd.Cmd):
             self.recv_buffer += data.decode()
 
     def print_async_message(self, message):
-        """вывод сообщения сервера (без потери текущего ввода)"""
+        """Вывод сообщения сервера (без потери текущего ввода)."""
         # readline хранит строку, которую пользователь уже начал печатать, но ещё не отправил по Enter
         current = readline.get_line_buffer()
 
@@ -118,7 +120,7 @@ class CmdMUD(cmd.Cmd):
         sys.stdout.flush()
 
     def receive_loop(self):
-        """получение сообщения от сервера в фоновом режиме"""
+        """Получение сообщения от сервера в фоновом режиме."""
         # отдельный поток, который постоянно слушает сервер
         # как только от сервера приходит сообщение -> печатаем его
 
@@ -130,38 +132,45 @@ class CmdMUD(cmd.Cmd):
 
         self.alive = False
 
+    def precmd(self, line):
+        """Пауза перед отправкой команды."""
+        if not self.use_rawinput and line:
+            time.sleep(SCRIPT_COMMAND_DELAY)
+
+        return line
+
     # если есть аргументы у движения - ошибка
 
     def do_up(self, arg):
-        """перемещение игрока вверх (up -> (0, -1))"""
+        """Перемещение игрока вверх (up -> (0, -1))."""
         if arg:
             print("Invalid arguments")
             return
         self.send_line("move 0 -1")
 
     def do_down(self, arg):
-        """перемещение игрока вниз (down -> (0, 1))"""
+        """Перемещение игрока вниз (down -> (0, 1))."""
         if arg:
             print("Invalid arguments")
             return
         self.send_line("move 0 1")
 
     def do_left(self, arg):
-        """перемещение игрока влево (left -> (-1, 0))"""
+        """Перемещение игрока влево (left -> (-1, 0))."""
         if arg:
             print("Invalid arguments")
             return
         self.send_line("move -1 0")
 
     def do_right(self, arg):
-        """перемещение игрока вправо (right -> (1, 0))"""
+        """Перемещение игрока вправо (right -> (1, 0))."""
         if arg:
             print("Invalid arguments")
             return
         self.send_line("move 1 0")
 
     def do_addmon(self, arg):
-        """добавление монстра в клетку на игровом поле"""
+        """Добавление монстра в клетку на игровом поле."""
         try:
             line_split = shlex.split(arg)
         except ValueError:
@@ -250,7 +259,7 @@ class CmdMUD(cmd.Cmd):
         self.send_line(request)
 
     def do_attack(self, arg):
-        """атака монстра в текущей клетке"""
+        """Атака монстра в текущей клетке."""
         '''
         поддерживаются команды:
             attack
@@ -306,7 +315,7 @@ class CmdMUD(cmd.Cmd):
         self.send_line(request)
 
     def do_sayall(self, arg):
-        """отправка сообщения всем игрокам (сообщение должно быть одним словом или одной строкой в кавычках)"""
+        """Отправка сообщения всем игрокам (сообщение должно быть одним словом или одной строкой в кавычках)."""
         try:
             # sayall <слово>
             # sayall "<выражение  пробелами>"
@@ -323,7 +332,7 @@ class CmdMUD(cmd.Cmd):
         self.send_line(f"sayall {shlex.quote(message)}")
 
     def complete_attack(self, text, line, i_begin, i_end):
-        """автодополнение для команды атаки"""
+        """Автодополнение для команды атаки."""
         # text - имя монстра, которое уже начали вводить
         # смотрим, какая команда введена (до text)
         try:
@@ -346,31 +355,53 @@ class CmdMUD(cmd.Cmd):
         return []
 
     def default(self, arg):
-        """обработка неизвестных команд"""
+        """Обработка неизвестных команд."""
         print("Invalid command")
 
     def emptyline(self):
-        """игнорирование пустой строки (в вводе)"""
+        """Игнорирование пустой строки (в вводе)."""
         pass
 
     def do_EOF(self, arg):
-        """чтобы на ctrl+D программа завершалась: Ctrl+D завершает клиент и закрывает соединение с сервером"""
+        """Закрытие клиента и завершение соединения с сервером после EOF (в том числе, после Ctrl+D)."""
         print()
         self.close_connection()
         return True
 
 
+def parse_args():
+    """Разбирает аргументы командной строки клиента."""
+    parser = argparse.ArgumentParser(
+        prog="python3 -m mood.client",
+        description="Run a MUD client.",
+    )
+
+    parser.add_argument("username")
+    parser.add_argument("--file", dest="script_file")
+
+    return parser.parse_args()
+
+
 def main():
-    """запуск MUD-клиент"""
+    """Запуск MUD-клиент."""
     print("<<< Welcome to Python-MUD 0.1 >>>")
 
-    # имя пользователя передаётся при запуске клиента
-    # python3 -m mood.client <username>
-    if len(sys.argv) != 2:
-        print("Usage: python3 -m mood.client <username>")
-        raise SystemExit(1)
+    # Допустимые варианты запуска:
+    # python3 -m mood.client <user_name>
+    # python3 -m mood.client <user_name> --file <commands_file>
+    args = parse_args()
 
-    CmdMUD(sys.argv[1]).cmdloop()
+    # если файл с командами не указан -> запускаем обычный режим
+    if args.script_file is None:
+        CmdMUD(args.username).cmdloop()
+        return
+
+    # если указан --file -> открываем файл с командами
+    with open(args.script_file, encoding="utf-8") as script:
+        interpreter = CmdMUD(args.username, stdin=script)
+        interpreter.prompt = ""                                 # в файловом режиме prompt не нужен
+        interpreter.use_rawinput = False                        # отключаем stdin через cmd
+        interpreter.cmdloop()
 
 
 if __name__ == "__main__":
