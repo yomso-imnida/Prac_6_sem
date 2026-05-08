@@ -66,6 +66,10 @@ async def move_monsters_periodically():
         # первый ход происходит только после ожидания
         await asyncio.sleep(MONSTER_MOVE_INTERVAL)
 
+        # запрещено движение монстров при off
+        if not game.moving_monsters:
+            continue
+
         # выбираем случайного монстра и пробуем переместить его
         result = game.move_random_monster()
 
@@ -181,6 +185,11 @@ async def client_processing(reader, writer):
 
                 case "sayall":
                     await send_to_everyone(f"{username}: {res['message']}")
+
+                case "movemonsters":
+                    state = "on" if res["enabled"] else "off"
+
+                    await send_to_one(writer, f"Moving monsters: {state}")
 
                 case "error":
                     await send_to_one(writer, res["message"])

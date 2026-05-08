@@ -43,6 +43,7 @@ class GameParam():
         self.size = FIELD_SIZE      # поле 10x10
         self.monsters = {}          # словарь {"name": ..., "hello": ..., "hp": ...}; ключ - (x, y)
         self.players = {}           # {username: {"x": ..., "y": ...}}  -  координаты каждого пользователя
+        self.moving_monsters = True         # фрежим бродячих монстров по умолчанию включен
 
     def wrap(self, coordinate):
         """Если произошёл выход за границы, то перенос на другой край поля."""
@@ -59,6 +60,14 @@ class GameParam():
     def remove_player(self, username):
         """Удаление игрока."""
         self.players.pop(username, None)
+
+    def set_movemonsters(self, val):
+        """Включение / выключение режима бродячих монстров."""
+        self.moving_monsters = val
+        return {
+            "status": "movemonsters",
+            "enabled": self.moving_monsters,
+        }
 
     def get_pos(self, username):
         """Получение координат игрока."""
@@ -253,6 +262,20 @@ class GameParam():
                     if len(cmd) != 2:
                         return {"status": "error", "message": "Invalid arguments"}
                     return {"status": "sayall", "message": cmd[1]}
+
+                case "movemonsters":
+                    if len(cmd) != 2:
+                        return {"status": "error", "message": "Invalid arguments"}
+
+                    match cmd[1]:
+                        case "on":
+                            return self.set_movemonsters(True)
+
+                        case "off":
+                            return self.set_movemonsters(False)
+
+                        case _:
+                            return {"status": "error", "message": "Invalid arguments"}
 
                 case _:
                     return {"status": "error", "message": "Invalid command"}

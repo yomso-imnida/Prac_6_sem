@@ -331,6 +331,20 @@ class CmdMUD(cmd.Cmd):
         message = line_split[0]
         self.send_line(f"sayall {shlex.quote(message)}")
 
+    def do_movemonsters(self, arg):
+        """Включение / выключение режима бродячих монстров."""
+        try:
+            line_split = shlex.split(arg)
+        except ValueError:
+            print("Invalid arguments")
+            return
+
+        if len(line_split) != 1 or line_split[0] not in ("on", "off"):
+            print("Invalid arguments")
+            return
+
+        self.send_line(f"movemonsters {line_split[0]}")
+
     def complete_attack(self, text, line, i_begin, i_end):
         """Автодополнение для команды атаки."""
         # text - имя монстра, которое уже начали вводить
