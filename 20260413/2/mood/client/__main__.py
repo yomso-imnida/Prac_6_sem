@@ -345,6 +345,21 @@ class CmdMUD(cmd.Cmd):
 
         self.send_line(f"movemonsters {line_split[0]}")
 
+    def do_locale(self, arg):
+        """Передача серверу имени выбранной локали."""
+        try:
+            line_split = shlex.split(arg)
+        except ValueError:
+            print("Invalid arguments")
+            return
+
+        if len(line_split) != 1:
+            print("Invalid arguments")
+            return
+
+        # клиент сам ничего не переводит, он только передаёт выбранную локаль серверу
+        self.send_line(f"locale {shlex.quote(line_split[0])}")
+
     def complete_attack(self, text, line, i_begin, i_end):
         """Автодополнение для команды атаки."""
         # text - имя монстра, которое уже начали вводить
