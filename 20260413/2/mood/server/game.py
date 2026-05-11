@@ -277,7 +277,13 @@ class GameParam():
                         case _:
                             return {"status": "error", "message": "Invalid arguments"}
 
+                case "locale":
+                    if len(cmd) != 2:
+                        return {"status": "error", "message": "Invalid arguments"}
+                    return {"status": "locale", "locale": cmd[1]}
+
                 case _:
                     return {"status": "error", "message": "Invalid command"}
+
         except ValueError:
             return {"status": "error", "message": "Invalid arguments"}
