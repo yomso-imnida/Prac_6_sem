@@ -390,9 +390,14 @@ async def main():
         await server.serve_forever()
 
 
+def serve():
+    """Запуск сервера из командной строки или из тестов."""
+    asyncio.run(main())
+
+
 if __name__ == "__main__":
     try:
-        asyncio.run(main())
+        serve()
     except KeyboardInterrupt:
         print()
         print("Server stopped")
