@@ -28,7 +28,7 @@ class CmdMUD(cmd.Cmd):
         """Подключение клиента к серверу, запуск потока для связи с сервером."""
         super().__init__(stdin=stdin)
         self.username = username
-        self.alive = True
+        self.alive = True               # флаг активного соединения с сервером
         self.recv_buffer = ""           # буфер для частично полученных сообщений
 
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -93,13 +93,14 @@ class CmdMUD(cmd.Cmd):
                 return message
 
             try:
-                data = self.sock.recv(4096)
+                data = self.sock.recv(4096)         # читаем очередную порцию байтов из сокета
             except OSError:
                 return None
 
             if not data:
                 return None
 
+            # сообщение может прийти не целиком -> дописываем данные в буфер
             self.recv_buffer += data.decode()
 
     def print_async_message(self, message):

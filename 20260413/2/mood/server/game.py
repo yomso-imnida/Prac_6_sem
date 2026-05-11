@@ -89,6 +89,7 @@ class GameParam():
 
     def players_at(self, x, y):
         """Получение имен всех игроков, которые находятся в этой клеточке."""
+        # нужны все игроки, тк на одной клетке может стоять несколько пользователей
         return [
             username
             for username, player in self.players.items()
@@ -191,7 +192,7 @@ class GameParam():
             }
 
         damage = WEAPONS[weapon]
-        final_damage = min(damage, monster["hp"])
+        final_damage = min(damage, monster["hp"])           # нельзя снять больше hp, чем осталось у монстра
         monster["hp"] -= final_damage
 
         died = monster["hp"] == 0

@@ -31,6 +31,7 @@ def get_translation(locale_name):
     if locale_name not in (RU_LOCALE, "ru_RU.UTF-8", "ru_RU"):
         return gettext.NullTranslations()
 
+    # переводы лежат внутри серверного модуля: mood/server/po
     locale_dir = Path(__file__).resolve().parent / LOCALE_DIR
 
     return gettext.translation(
@@ -64,15 +65,17 @@ def hp_text(n, ngettext):
 
 async def send_event_to_everyone(event, except_username=None, **kwargs):
     """Отправка события всем клиентам с учётом локали каждого клиента."""
-    dead_clients = []
-    current_clients = list(clients.items())
+    dead_clients = []                           # клиенты, которым не удалось отправить сообщение
+    current_clients = list(clients.items())     # копия клиентов на момент рассылки
 
     for username, client in current_clients:
         if username == except_username:
             continue
 
         writer = client["writer"]                   # поток записи конкретного пользователя
-        _, ngettext = translate_for(username)
+        _, ngettext = translate_for(username)       # для каждого получателя берем его функцию множественного числа
+
+        # сообщение собирается отдельно под локаль конкретного получателя
         message = make_event_message(event, username, ngettext, **kwargs)
 
         try:
@@ -89,13 +92,14 @@ async def send_event_to_everyone(event, except_username=None, **kwargs):
         except Exception:
             dead_clients.append(username)
 
+    # удаляем мертвых пользователей
     for username in dead_clients:
         clients.pop(username, None)
 
 
 def make_event_message(event, receiver, ngettext, **kwargs):
     """Формирование локализованного сообщения о событии."""
-    _ = translate_for(receiver)[0]
+    _ = translate_for(receiver)[0]          # gettext-функция выбирается по локали получателя сообщения
 
     match event:
         case "join":
@@ -193,7 +197,7 @@ async def send_to_everyone(message, except_username=None):
 
 async def send_encounter(username, encounter):
     """Отправка сообщения о встрече с монстром (одному из игроков)."""
-    client = clients.get(username)
+    client = clients.get(username)          # encounter отправляется только одному игроку, а не всем
 
     if client is None:
         return
@@ -248,7 +252,7 @@ async def client_processing(reader, writer):
         6. при отключении удаляет игрока и сообщает остальным о его уходе
     '''
 
-    username = None
+    username = None             # имя появится после 1-го сообщения от клиента
 
     try:
         # первое сообщение от клиента - имя пользователя
@@ -358,6 +362,7 @@ async def client_processing(reader, writer):
 
     # при любом завершении соединения удаляем игрока и рассылаем сообщение о выходе
     finally:
+        # проверув: был ли клиент полностью зарегистрирован в игре
         was_connected = (username is not None) and (username in clients)
 
         if username is not None:
@@ -377,6 +382,8 @@ async def client_processing(reader, writer):
 async def main():
     """Запуск MUD-сервер."""
     server = await asyncio.start_server(client_processing, HOST, PORT)
+
+    # фоновая задача двигает монстров вне зависимости от команд клиентов
     asyncio.create_task(move_monsters_periodically())
 
     async with server:
