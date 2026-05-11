@@ -19,3 +19,8 @@ DIRECTIONS = {
     "up":    (0, -1),
     "down":  (0,  1),
 }
+
+TEXT_DOMAIN = "mood"            # имя домена перевода, используется gettext для поиска .mo-файла
+LOCALE_DIR = "po"               # каталог с файлами локализации .po / .mo
+DEFAULT_LOCALE = "en"           # локаль по умолчанию (английская)
+RU_LOCALE = "ru_RU.UTF8"        # русская локаль
