@@ -1,0 +1,68 @@
+# Russian (Russia) translations for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-05-11 21:11+0300\n"
+"PO-Revision-Date: 2026-05-11 20:32+0300\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language: ru_RU\n"
+"Language-Team: ru_RU <LL@li.org>\n"
+"Plural-Forms: nplurals=3; plural=(n%10==1 && n%100!=11 ? 0 : n%10>=2 && "
+"n%10<=4 && (n%100<10 || n%100>=20) ? 1 : 2);\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: mood/server/__main__.py:60
+#, python-brace-format
+msgid "{} hp"
+msgid_plural "{} hp"
+msgstr[0] "{} очко здоровья"
+msgstr[1] "{} очка здоровья"
+msgstr[2] "{} очков здоровья"
+
+#: mood/server/__main__.py:100
+#, python-brace-format
+msgid "{} joined the MUD"
+msgstr "{} зашёл в MUD"
+
+#: mood/server/__main__.py:103
+#, python-brace-format
+msgid "{} left the MUD"
+msgstr "{} вышел из MUD"
+
+#: mood/server/__main__.py:106
+#, python-brace-format
+msgid "{} added monster {} to ({}, {}) with {}"
+msgstr "{} добавил монстра {} в ({}, {}) с {}"
+
+#: mood/server/__main__.py:115
+msgid "Replaced the old monster"
+msgstr "Старый монстр заменен"
+
+#: mood/server/__main__.py:120
+#, python-brace-format
+msgid "{} attacked {} with {}, damage {}, {} died"
+msgstr "{} атаковал {} с помощью {}, урон {}, {} погиб"
+
+#: mood/server/__main__.py:129
+#, python-brace-format
+msgid "{} attacked {} with {}, damage {}, {} now has {}"
+msgstr "{} атаковал {} с помощью {}, урон {}, у {} осталось {}"
+
+#: mood/server/__main__.py:139
+#, python-brace-format
+msgid "{} moved one cell {}"
+msgstr "{} сдвинулся на одну клетку {}"
+
+#: mood/server/__main__.py:352
+#, python-brace-format
+msgid "Set up locale: {}"
+msgstr "Установлена локаль: {}"
+
