@@ -61,7 +61,7 @@ class TestClientCommands(unittest.TestCase):
         self.assert_command_was_sent(fake_socket, "attack spear")
 
     def test_attack_monster_with_weapon(self):
-        """Attack <monster> with <weapon> преобразуется в attack <monster> <weapon>.."""
+        """Attack <monster> with <weapon> преобразуется в attack <monster> <weapon>."""
         fake_socket, _ = self.run_client_session(["attack dragon with axe"])
 
         self.assert_command_was_sent(fake_socket, "attack dragon axe")
