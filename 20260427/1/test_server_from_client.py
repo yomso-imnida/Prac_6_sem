@@ -34,6 +34,11 @@ class TestServerFromClient(unittest.TestCase):
         reply = self.read_block()
         self.assertEqual(reply, "Moving monsters: off")
 
+        # включаем русскую локаль для проверки русскоязычных ответов сервера
+        self.send_raw("locale ru_RU.UTF-8")
+        reply = self.read_block()
+        self.assertEqual(reply, "Установлена локаль: ru_RU.UTF-8")
+
     def tearDown(self):
         """Закрытие клиентского сокета и остановка сервера."""
         self.sock.close()
@@ -71,7 +76,7 @@ class TestServerFromClient(unittest.TestCase):
         # сервер должен подтвердить имя, координаты и hp добавленного монстра
         self.assertEqual(
             reply,
-            "tester added monster dragon to (1, 0) with 30 hp",
+            "tester добавил монстра dragon в (1, 0) с 30 очками здоровья",
         )
 
     def test_move_to_monster(self):
@@ -81,7 +86,7 @@ class TestServerFromClient(unittest.TestCase):
         reply = self.read_block()
         self.assertEqual(
             reply,
-            "tester added monster dragon to (1, 0) with 30 hp",
+            "tester добавил монстра dragon в (1, 0) с 30 очками здоровья",
         )
 
         # передвигаем игрока на клетку с монстром
@@ -102,7 +107,7 @@ class TestServerFromClient(unittest.TestCase):
         reply = self.read_block()
         self.assertEqual(
             reply,
-            "tester added monster dragon to (1, 0) with 30 hp",
+            "tester добавил монстра dragon в (1, 0) с 30 очками здоровья",
         )
 
         # переходим на клетку с монстром
@@ -119,8 +124,8 @@ class TestServerFromClient(unittest.TestCase):
 
         self.assertEqual(
             reply,
-            "tester attacked dragon with sword, damage 10 hp, "
-            "dragon now has 20 hp",
+            "tester атаковал dragon с помощью sword, урон 10 очков здоровья, "
+            "у dragon теперь осталось 20 очков здоровья",
         )
 
 
