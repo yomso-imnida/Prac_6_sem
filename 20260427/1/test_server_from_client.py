@@ -76,7 +76,7 @@ class TestServerFromClient(unittest.TestCase):
         # сервер должен подтвердить имя, координаты и hp добавленного монстра
         self.assertEqual(
             reply,
-            "tester добавил монстра dragon в (1, 0) с 30 очками здоровья",
+            "tester добавил монстра dragon в (1, 0), здоровье: 30 очков здоровья",
         )
 
     def test_move_to_monster(self):
@@ -86,7 +86,7 @@ class TestServerFromClient(unittest.TestCase):
         reply = self.read_block()
         self.assertEqual(
             reply,
-            "tester добавил монстра dragon в (1, 0) с 30 очками здоровья",
+            "tester добавил монстра dragon в (1, 0), здоровье: 30 очков здоровья",
         )
 
         # передвигаем игрока на клетку с монстром
@@ -107,7 +107,7 @@ class TestServerFromClient(unittest.TestCase):
         reply = self.read_block()
         self.assertEqual(
             reply,
-            "tester добавил монстра dragon в (1, 0) с 30 очками здоровья",
+            "tester добавил монстра dragon в (1, 0), здоровье: 30 очков здоровья",
         )
 
         # переходим на клетку с монстром
@@ -125,7 +125,7 @@ class TestServerFromClient(unittest.TestCase):
         self.assertEqual(
             reply,
             "tester атаковал dragon с помощью sword, урон 10 очков здоровья, "
-            "у dragon теперь осталось 20 очков здоровья",
+            "у dragon осталось 20 очков здоровья",
         )
 
 

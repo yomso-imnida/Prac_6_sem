@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-05-11 21:11+0300\n"
+"POT-Creation-Date: 2026-05-14 21:34+0300\n"
 "PO-Revision-Date: 2026-05-11 20:32+0300\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ru_RU\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Generated-By: Babel 2.18.0\n"
 
-#: mood/server/__main__.py:60
+#: mood/server/__main__.py:63
 #, python-brace-format
 msgid "{} hp"
 msgid_plural "{} hp"
@@ -27,41 +27,41 @@ msgstr[0] "{} очко здоровья"
 msgstr[1] "{} очка здоровья"
 msgstr[2] "{} очков здоровья"
 
-#: mood/server/__main__.py:100
+#: mood/server/__main__.py:106
 #, python-brace-format
 msgid "{} joined the MUD"
 msgstr "{} зашёл в MUD"
 
-#: mood/server/__main__.py:103
+#: mood/server/__main__.py:109
 #, python-brace-format
 msgid "{} left the MUD"
 msgstr "{} вышел из MUD"
 
-#: mood/server/__main__.py:106
+#: mood/server/__main__.py:112
 #, python-brace-format
 msgid "{} added monster {} to ({}, {}) with {}"
-msgstr "{} добавил монстра {} в ({}, {}) с {}"
+msgstr "{} добавил монстра {} в ({}, {}), здоровье: {}"
 
-#: mood/server/__main__.py:115
+#: mood/server/__main__.py:121
 msgid "Replaced the old monster"
 msgstr "Старый монстр заменен"
 
-#: mood/server/__main__.py:120
+#: mood/server/__main__.py:126
 #, python-brace-format
 msgid "{} attacked {} with {}, damage {}, {} died"
 msgstr "{} атаковал {} с помощью {}, урон {}, {} погиб"
 
-#: mood/server/__main__.py:129
+#: mood/server/__main__.py:135
 #, python-brace-format
 msgid "{} attacked {} with {}, damage {}, {} now has {}"
 msgstr "{} атаковал {} с помощью {}, урон {}, у {} осталось {}"
 
-#: mood/server/__main__.py:139
+#: mood/server/__main__.py:145
 #, python-brace-format
 msgid "{} moved one cell {}"
 msgstr "{} сдвинулся на одну клетку {}"
 
-#: mood/server/__main__.py:352
+#: mood/server/__main__.py:358
 #, python-brace-format
 msgid "Set up locale: {}"
 msgstr "Установлена локаль: {}"
