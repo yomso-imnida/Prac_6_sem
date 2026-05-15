@@ -1,0 +1,13 @@
+MANIFEST.in
+dodo.py
+pyproject.toml
+po/ru_RU.UTF-8/LC_MESSAGES/wordcount.po
+po/ru_RU.UTF-8/LC_MESSAGES/wordecounte.po
+wordcount/__init__.py
+wordcount/__main__.py
+wordcount.egg-info/PKG-INFO
+wordcount.egg-info/SOURCES.txt
+wordcount.egg-info/dependency_links.txt
+wordcount.egg-info/entry_points.txt
+wordcount.egg-info/top_level.txt
+wordcount/ru_RU.UTF-8/LC_MESSAGES/wordcount.mo
