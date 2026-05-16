@@ -1,0 +1,29 @@
+# добавляем в sdist весь Python-пакет mood
+graft mood
+
+# добавляем исходники документации
+graft doc
+
+# добавляем файлы, которые нужны для сборки и тестирования проекта
+include dodo.py
+include pyproject.toml
+include test_server_from_client.py
+
+# исключаем служебные и скомпилированные Python-файлы
+global-exclude __pycache__/*
+global-exclude *.py[cod]
+
+# исключаем базу doit (с информацией о прошлых запусках задач)
+global-exclude .doit.db
+
+# не включаем в sdist HTML-документацию
+prune doc/_build
+
+# не включаем в sdist уже собранные дистрибутивы
+prune dist
+
+# не включаем в sdist временную директорию сборки
+prune build
+
+# не включаем в sdist метаинформацию, которую setuptools генерирует при сборке
+prune *.egg-info
