@@ -10,9 +10,12 @@ from mood.common.constants import WEAPONS, FIELD_SIZE, DIRECTIONS
 
 def load_jgsbat():
     """Загрузка летучей мыши (монстра jgsbat) из файла jgsbat.txt."""
+    # importlib.resources ищет файл внутри установленного пакета
     cow_path = resources.files("mood.server").joinpath("data/jgsbat.txt")
 
+    # файл содержит описание монстра в формате cowsay: .cow
     with cow_path.open(encoding="utf-8") as cow_file:
+        # read_dot_cow преобразует файл в объект, который можно передать в cowsay.cowsay()
         return cowsay.read_dot_cow(cow_file)
 
 

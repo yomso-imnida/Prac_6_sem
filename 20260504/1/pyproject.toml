@@ -1,0 +1,66 @@
+# Описание системы сборки пакета.
+# setuptools используется как бэкенд, который собирает sdist и wheel
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+
+# Основная метаинформация проекта.
+# эти данные попадут в собираемый wheel
+[project]
+name = "mood-mud"
+version = "0.1.0"
+description = "Multi-user MUD game with localization and documentation"
+requires-python = ">=3.10"
+
+# Эксплуатационные зависимости.
+# они автоматически устанавливаются вместе с пакетом
+dependencies = [
+    "cowsay",
+]
+
+
+# Точки входа.
+# после установки пакета появляются команды mood-client и mood-server
+[project.scripts]
+mood-client = "mood.client.__main__:main"
+mood-server = "mood.server.__main__:main"
+
+
+# Python-пакеты, которые нужно включить в дистрибутив.
+[tool.setuptools]
+packages = [
+    "mood",
+    "mood.client",
+    "mood.server",
+    "mood.common",
+]
+
+
+# Остальные файлы, которые должны быть в установленном пакете.
+[tool.setuptools.package-data]
+
+# Сгенерированная HTML-документация.
+"mood" = [
+    "doc_html/**/*",
+]
+
+# Данные сервера.
+# data/*.txt -> файл с jgsbat
+# *.mo -> скомпилированный перевод для gettext
+"mood.server" = [
+    "data/*.txt",
+    "po/*/LC_MESSAGES/*.mo",
+]
+
+
+# Зависимости для разработки и сборки.
+# они не нужны игроку, но нужны для сборки (перевод, документация, wheel)
+[dependency-groups]
+devel = [
+    "setuptools",
+    "build",
+    "doit",
+    "babel",
+    "sphinx",
+]

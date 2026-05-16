@@ -8,7 +8,9 @@ import threading
 import readline
 import argparse
 import time
+import webbrowser
 
+from importlib import resources
 from mood.common.constants import HOST, MSG_DELIM, PORT, WEAPONS, SCRIPT_COMMAND_DELAY
 from mood.server.game import get_monsters
 
@@ -360,6 +362,24 @@ class CmdMUD(cmd.Cmd):
 
         # клиент сам ничего не переводит, он только передаёт выбранную локаль серверу
         self.send_line(f"locale {shlex.quote(line_split[0])}")
+
+    def do_documentation(self, arg):
+        """Открытие HTML-документации в браузере."""
+        # аргументов не должно быть: просто documentation
+        if arg:
+            print("Invalid arguments")
+            return
+
+        # ищем index.html внутри установленного пакета
+        index = resources.files("mood").joinpath("doc_html/index.html")
+
+        # документация должна быть заранее собрана и включена в wheel
+        if not index.is_file():
+            print("Documentation is not built")
+            return
+
+        # webbrowser.open() открывает index.html в браузере пользователя
+        webbrowser.open(index.as_uri())         # as_uri() преобразует путь к файлу в file:// URI
 
     def complete_attack(self, text, line, i_begin, i_end):
         """Автодополнение для команды атаки."""
