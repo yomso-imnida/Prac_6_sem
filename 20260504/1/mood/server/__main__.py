@@ -392,12 +392,12 @@ async def main():
 
 def serve():
     """Запуск сервера из командной строки или из тестов."""
-    asyncio.run(main())
-
-
-if __name__ == "__main__":
     try:
-        serve()
+        asyncio.run(main())
     except KeyboardInterrupt:
         print()
         print("Server stopped")
+
+
+if __name__ == "__main__":
+    serve()
