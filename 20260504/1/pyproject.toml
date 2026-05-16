@@ -24,7 +24,7 @@ dependencies = [
 # после установки пакета появляются команды mood-client и mood-server
 [project.scripts]
 mood-client = "mood.client.__main__:main"
-mood-server = "mood.server.__main__:main"
+mood-server = "mood.server.__main__:serve"
 
 
 # Python-пакеты, которые нужно включить в дистрибутив.
