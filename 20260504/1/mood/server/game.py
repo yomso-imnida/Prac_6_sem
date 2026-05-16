@@ -3,24 +3,20 @@
 import random
 import cowsay
 import shlex
-from io import StringIO
+from importlib import resources
 
 # словарь с оружием для нанесения урона монстру
 from mood.common.constants import WEAPONS, FIELD_SIZE, DIRECTIONS
 
-JGSBAT = cowsay.read_dot_cow(StringIO(r"""
-$the_cow = <<EOC;
- ,_                    _,
- ) '-._  ,_    _,  _.-' (
- )  _.-'.|\\--//|.'-._  (
-  )'   .'\/o\/o\/'.   `(
-   ) .' . \====/ . '. (
-    )  / <<    >> \  (
-     '-._/``  ``\_.-'
-jgs     __\\'--'//__
-       (((""`  `"")))
-EOC
-"""))
+def load_jgsbat():
+    """Загрузка летучей мыши (монстра jgsbat) из файла jgsbat.txt."""
+    cow_path = resources.files("mood.server").joinpath("data/jgsbat.txt")
+
+    with cow_path.open(encoding="utf-8") as cow_file:
+        return cowsay.read_dot_cow(cow_file)
+
+
+JGSBAT = load_jgsbat()
 
 
 def get_monsters():
