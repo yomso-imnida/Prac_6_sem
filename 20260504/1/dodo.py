@@ -28,6 +28,12 @@ DOC_DIR = Path("doc")
 DOC_BUILD_DIR = DOC_DIR / "_build"
 HTML_INDEX = DOC_BUILD_DIR / "html" / "index.html"
 
+# временная директория внутри пакета; в нее копируется HTML-документация перед сборкой wheel
+PACKAGE_DOC_DIR = Path("mood") / "doc_html"
+
+# директория, в которую python3 -m build записывает sdist и wheel
+DIST_DIR = Path("dist")
+
 
 def clean_targets(targets):
     """Удаление файлов, перечисленных в targets задачи DoIt."""
@@ -43,6 +49,16 @@ def python_files():
 def rst_files():
     """Получение исходных файлов Sphinx-документации."""
     return list(DOC_DIR.rglob("*.rst")) + [DOC_DIR / "conf.py"]
+
+
+def copy_html_to_package():
+    """Копирование HTML-документации внутрь пакета (для wheel)."""
+    # удаляем старую копию документации
+    if PACKAGE_DOC_DIR.exists():
+        shutil.rmtree(PACKAGE_DOC_DIR)
+
+    # копируем уже собранный HTML-док в пакет mood
+    shutil.copytree(DOC_BUILD_DIR / "html", PACKAGE_DOC_DIR)
 
 
 def task_pot():
@@ -117,6 +133,22 @@ def task_html():
     }
 
 
+def task_packagedoc():
+    """Копирование собранной HTML-документации внутрь пакета."""
+    return {
+        "actions": [copy_html_to_package],      # копирование
+        "task_dep": ["html"],                   # сборка HTML-документации
+
+        # файл в документации, по которому doit понимает, что копирование уже сделано
+        "targets": [PACKAGE_DOC_DIR / "index.html"],
+
+        # удаление временной копии документации
+        "clean": [
+            (shutil.rmtree, [PACKAGE_DOC_DIR], {"ignore_errors": True}),
+        ],
+    }
+
+
 def task_test():
     """Запуск клиент-серверных тестов после сборки перевода."""
     return {
@@ -130,4 +162,55 @@ def task_test():
 
         # сначала собирается перевод, т.к. тестируются русскоязыычные ответы
         "task_dep": ["i18n"],
+    }
+
+
+def task_sdist():
+    """Сборка дистрибутива исходников."""
+    return {
+        # собираем архив исходников (.tar.gz)
+        "actions": [
+            "python -m build --sdist",
+        ],
+
+        # если что-то изменилось (исходники, документация, перевод, настройки сборки) ->
+        # -> собираем sdist заново
+        "file_dep": python_files()
+        + rst_files()
+        + [
+            Path("pyproject.toml"),
+            Path("MANIFEST.in"),
+            PO_FILE,
+            POT_FILE,
+            Path("mood/server/data/jgsbat.txt"),
+        ],
+
+        # не фиксируем имя target, т.к. оно зависит от версии пакета
+        "targets": [],
+    }
+
+
+def task_wheel():
+    """Сборка wheel-дистрибутива (для установки)."""
+    return {
+        # собираем wheel; это готовый пакет для установки через pip
+        "actions": [
+            "python -m build --wheel",
+        ],
+
+        # wheel должен включать в себя готовый перевод и HTML-документацию
+        "task_dep": ["i18n", "packagedoc"],
+
+        # если что-то изменилось (исходники, документация, перевод, настройки сборки) ->
+        # -> собираем sdist заново
+        "file_dep": python_files()
+        + [
+            Path("pyproject.toml"),
+            MO_FILE,
+            Path("mood/server/data/jgsbat.txt"),
+            PACKAGE_DOC_DIR / "index.html",
+        ],
+
+        # не фиксируем имя target, т.к. оно зависит от версии пакета
+        "targets": [],
     }
