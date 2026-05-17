@@ -1,4 +1,4 @@
-"""Запуск MUD-а."""
+"""Запуск MUD-а (сервер)."""
 
 import asyncio
 import gettext
@@ -362,7 +362,7 @@ async def client_processing(reader, writer):
 
     # при любом завершении соединения удаляем игрока и рассылаем сообщение о выходе
     finally:
-        # проверув: был ли клиент полностью зарегистрирован в игре
+        # проверяем: был ли клиент полностью зарегистрирован в игре
         was_connected = (username is not None) and (username in clients)
 
         if username is not None:
@@ -380,7 +380,7 @@ async def client_processing(reader, writer):
 
 
 async def main():
-    """Запуск MUD-сервер."""
+    """Запуск MUD-сервера."""
     server = await asyncio.start_server(client_processing, HOST, PORT)
 
     # фоновая задача двигает монстров вне зависимости от команд клиентов

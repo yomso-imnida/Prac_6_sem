@@ -321,7 +321,7 @@ class CmdMUD(cmd.Cmd):
         """Отправка сообщения всем игрокам (сообщение должно быть одним словом или одной строкой в кавычках)."""
         try:
             # sayall <слово>
-            # sayall "<выражение  пробелами>"
+            # sayall "<выражение с пробелами>"
             line_split = shlex.split(arg)
         except ValueError:
             print("Invalid arguments")
@@ -433,7 +433,7 @@ def parse_args():
 
 
 def main():
-    """Запуск MUD-клиент."""
+    """Запуск MUD-клиента."""
     print("<<< Welcome to Python-MUD 0.1 >>>")
 
     # Допустимые варианты запуска:

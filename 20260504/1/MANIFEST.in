@@ -7,17 +7,24 @@ graft doc
 # добавляем файлы, которые нужны для сборки и тестирования проекта
 include dodo.py
 include pyproject.toml
+include requirements-dev.txt
 include test_server_from_client.py
 
 # исключаем служебные и скомпилированные Python-файлы
 global-exclude __pycache__/*
 global-exclude *.py[cod]
 
+# .mo пересобирается из .po, так что в sdist его не включаем
+global-exclude *.mo
+
 # исключаем базу doit (с информацией о прошлых запусках задач)
 global-exclude .doit.db
 
 # не включаем в sdist HTML-документацию
 prune doc/_build
+
+# не включаем временную HTML-копию, которая нужна только для wheel
+prune mood/doc_html
 
 # не включаем в sdist уже собранные дистрибутивы
 prune dist

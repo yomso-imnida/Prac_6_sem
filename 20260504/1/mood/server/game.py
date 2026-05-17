@@ -8,6 +8,7 @@ from importlib import resources
 # словарь с оружием для нанесения урона монстру
 from mood.common.constants import WEAPONS, FIELD_SIZE, DIRECTIONS
 
+
 def load_jgsbat():
     """Загрузка летучей мыши (монстра jgsbat) из файла jgsbat.txt."""
     # importlib.resources ищет файл внутри установленного пакета

@@ -30,6 +30,10 @@ mood-server = "mood.server.__main__:serve"
 
 # Python-пакеты, которые нужно включить в дистрибутив.
 [tool.setuptools]
+
+# MANIFEST.in описывает sdist, а файлы для wheel явно перечислены в package-data
+include-package-data = false
+
 packages = [
     "mood",
     "mood.client",

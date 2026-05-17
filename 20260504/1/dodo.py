@@ -31,9 +31,6 @@ HTML_INDEX = DOC_BUILD_DIR / "html" / "index.html"
 # временная директория внутри пакета; в нее копируется HTML-документация перед сборкой wheel
 PACKAGE_DOC_DIR = Path("mood") / "doc_html"
 
-# директория, в которую python3 -m build записывает sdist и wheel
-DIST_DIR = Path("dist")
-
 
 def clean_targets(targets):
     """Удаление файлов, перечисленных в targets задачи DoIt."""
@@ -57,7 +54,7 @@ def copy_html_to_package():
     if PACKAGE_DOC_DIR.exists():
         shutil.rmtree(PACKAGE_DOC_DIR)
 
-    # копируем уже собранный HTML-док в пакет mood
+    # копируем уже собранную HTML-документацию в пакет mood
     shutil.copytree(DOC_BUILD_DIR / "html", PACKAGE_DOC_DIR)
 
 
@@ -202,7 +199,7 @@ def task_wheel():
         "task_dep": ["i18n", "packagedoc"],
 
         # если что-то изменилось (исходники, документация, перевод, настройки сборки) ->
-        # -> собираем sdist заново
+        # -> собираем wheel заново
         "file_dep": python_files()
         + [
             Path("pyproject.toml"),
