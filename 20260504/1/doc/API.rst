@@ -1,8 +1,15 @@
 Technical documentation
 =======================
 
-Server entry point
-------------------
+Client
+------
+
+.. automodule:: mood.client.__main__
+   :members:
+   :undoc-members:
+
+Server
+------
 
 .. automodule:: mood.server.__main__
    :members:
